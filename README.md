@@ -1,137 +1,149 @@
-# Dobu Mobile 🐾
+# Dobu Mobile
 
-Dobu Mobile é um protótipo mobile desenvolvido em React Native com Expo, criado para auxiliar responsáveis no acompanhamento da rotina e dos cuidados diários com seus pets de forma simples, prática e organizada.
+Dobu Mobile é um protótipo funcional desenvolvido em React Native com Expo. A proposta é ajudar responsáveis e profissionais veterinários a organizar informações importantes da rotina de cuidado dos animais.
 
-A aplicação reúne funcionalidades voltadas para monitoramento, lembretes, agendamentos veterinários e gerenciamento de informações dos animais, utilizando persistência local e recursos nativos do dispositivo.
-
-O projeto também apresenta a proposta da **Dobu-CAM**, um sistema de monitoramento pensado para pets que necessitam de maior supervisão em ambientes internos.
+O aplicativo reúne cadastro de usuários, login simulado, gerenciamento de pets, lembretes, agendamentos, guia de informações e uma simulação de monitoramento pela Dobu-Cam. O projeto usa navegação entre telas, formulários controlados com `useState` e persistência local com AsyncStorage.
 
 ---
 
-# 📱 Objetivo do Projeto
+# Objetivo do Projeto
 
-O objetivo do Dobu Mobile é auxiliar responsáveis por animais no acompanhamento da rotina e dos cuidados diários dos pets de forma simples e organizada.
+O objetivo do Dobu Mobile é centralizar dados importantes da vida do animal e apoiar o cuidado preventivo no dia a dia.
 
-A aplicação permite que o usuário:
+Com o app, o usuário consegue:
 
-- acompanhe informações importantes sobre o animal;
-- organize lembretes e consultas;
-- realize agendamentos veterinários;
-- monitore a rotina do pet;
-- visualize informações e orientações relacionadas ao cuidado animal.
+- cadastrar responsáveis e veterinários;
+- fazer login simulado;
+- cadastrar e visualizar animais;
+- organizar consultas, vacinas, retornos, exames e outros cuidados;
+- consultar lembretes e agendamentos;
+- acessar orientações de cuidado animal;
+- simular leituras da Dobu-Cam;
+- manter os dados salvos localmente no dispositivo.
 
-Além da área do responsável, o projeto também possui uma proposta voltada para clínicas e profissionais veterinários, facilitando o acesso a informações e ao gerenciamento de atendimentos de forma prática e acessível.
-
----
-
-# 🐶 Sobre a Dobu-CAM
-
-A Dobu-CAM foi criada para auxiliar responsáveis no monitoramento de seus pets em ambientes internos, especialmente animais que necessitam de maior supervisão devido à:
-
-- idade avançada;
-- problemas de saúde;
-- recuperação pós-cirúrgica;
-- necessidade de acompanhamento constante.
-
-A proposta é permitir que o usuário acompanhe visualmente o animal e mantenha uma rotina preventiva de cuidados através do aplicativo.
+Também existe um fluxo para veterinários, com visualização de agenda, pacientes e informações úteis para atendimento.
 
 ---
 
-# 🚀 Tecnologias Utilizadas
+# Sobre a Dobu-Cam
+
+A Dobu-Cam representa uma proposta de monitoramento geral do ambiente do animal. Ela não pertence a um pet individual; funciona como um recurso do sistema para acompanhar presença, movimento e status simulado.
+
+Na tela da Dobu-Cam é possível:
+
+- simular detecção de presença;
+- conectar uma URL de dispositivo IoT;
+- exibir o status da leitura;
+- salvar leituras localmente com AsyncStorage.
+
+---
+
+# Tecnologias Utilizadas
 
 - React Native
 - Expo
 - React Navigation
 - AsyncStorage
-- Expo Camera
 - Expo Image Picker
 - Expo File System
 - @expo/vector-icons
 
 ---
 
-# ✨ Funcionalidades Implementadas
+# Funcionalidades Implementadas
 
-## 🔐 Navegação e Autenticação
-- Tela de splash/loading personalizada;
-- Tela de boas-vindas;
-- Login simulado;
+## Navegação e Autenticação
+
+- Tela de carregamento;
+- Tela inicial;
 - Cadastro de usuário;
-- Navegação entre múltiplas telas utilizando React Navigation.
+- Login simulado;
+- Fluxo para responsável;
+- Fluxo para veterinário;
+- Mais de cinco rotas navegáveis usando React Navigation.
 
-## 🐾 Gerenciamento de Pets
-- Cadastro de pets;
-- Pré-visualização dinâmica enquanto o usuário digita;
+## Gerenciamento de Pets
+
+- Cadastro de animais;
+- Prévia dinâmica dos dados enquanto o usuário digita;
 - Manipulação de estado com `useState`;
-- Lista de pets cadastrados;
-- Perfil individual de cada pet.
+- Lista de animais cadastrados;
+- Perfil individual do animal;
+- Exclusão de animal.
 
-## 📸 Monitoramento e Câmera
-- Captura de fotos utilizando a câmera do dispositivo;
-- Armazenamento local das imagens;
-- Simulação visual de monitoramento pet através da Dobu-CAM.
+## Rotina e Agendamentos
 
-## 📅 Rotina e Agendamentos
-- Sistema de lembretes;
-- Agendamento de consultas veterinárias;
-- Organização de eventos em calendário simples;
-- Mock de vacinas, check-ups, medicamentos e vermífugos.
+- Calendário de agendamentos;
+- Cadastro de consulta, vacina, retorno, check-up, exame, vermífugo e banho/tosa;
+- Seleção de pet, médico, tipo, data, horário, clínica e prioridade;
+- Lembretes gerados a partir dos agendamentos;
+- Vínculo entre agendamentos, pets, responsáveis e veterinários.
 
-## 🏆 Sistema de Pontuação
-O aplicativo possui uma lógica simples de gamificação para incentivar o cuidado contínuo com os pets.
+## Guia de Informações
+
+- Conteúdos sobre cuidado animal;
+- Filtros para responsável, médico e urgência;
+- Busca por temas;
+- Orientações práticas sobre rotina, prevenção, comportamento, alimentação e sinais de alerta.
+
+## Sistema de Pontuação
+
+O aplicativo possui uma lógica simples de pontuação para incentivar o cuidado contínuo.
 
 O usuário ganha pontos ao:
 
-- acessar o aplicativo;
-- cadastrar novos pets;
-- utilizar funcionalidades do sistema.
+- cadastrar novos animais;
+- criar agendamentos.
 
-A pontuação é exibida na Home e no Perfil do usuário.
+Cada usuário possui sua própria pontuação.
 
-## 💾 Persistência Local
-Persistência de dados utilizando AsyncStorage:
+## Persistência Local
 
-- Usuário;
-- Pets;
-- Agendamentos;
-- Fotos;
-- Pontuação.
+Os dados são persistidos com AsyncStorage:
 
-Os dados continuam salvos mesmo após reiniciar o aplicativo.
+- usuário logado;
+- lista de usuários;
+- pets;
+- agendamentos;
+- monitoramento;
+- pontos por usuário.
+
+Ao recarregar ou reiniciar o aplicativo, o app consulta o usuário salvo e retorna ao fluxo correto. Os dados cadastrados continuam disponíveis localmente.
 
 ---
 
-# 🧠 Conceitos Aplicados
-
-O projeto aplica conteúdos trabalhados em aula como:
+# Conceitos Aplicados
 
 - Navegação entre telas;
 - Manipulação de estado com `useState`;
 - Componentização;
+- Formulários controlados;
 - Persistência local com AsyncStorage;
-- Manipulação de formulários;
-- Uso de câmera e arquivos;
-- Estruturação de aplicação React Native;
-- Fluxo de interface mobile.
+- Tratamento de erros em operações principais de cadastro, login, foto, agendamento e armazenamento;
+- Uso de bibliotecas do Expo;
+- Organização de fluxo mobile;
+- Dados mockados e simulações funcionais.
 
 ---
 
-# 📂 Estrutura do Projeto
+# Estrutura do Projeto
 
 ```bash
 src/
- ├── assets/
- ├── components/
- ├── routes/
- ├── screens/
- ├── storage/
- ├── styles/
- └── services/
+  components/
+  screens/
+  storage/
+  styles/
+assets/
+App.js
+app.json
+index.js
+package.json
 ```
 
 ---
 
-# ▶️ Como Executar o Projeto
+# Como Executar o Projeto
 
 ## Instalar dependências
 
@@ -142,56 +154,59 @@ npm install
 ## Iniciar o projeto
 
 ```bash
-npm expo start
+npx expo start
 ```
 
 ## Executar no Android
+
+Com o Metro aberto, pressione:
 
 ```bash
 a
 ```
 
-Abra o aplicativo no Expo Go utilizando o QR Code exibido no terminal.
+Também é possível abrir pelo Expo Go usando o QR Code exibido no terminal.
+
+Para limpar o cache durante testes:
+
+```bash
+npx expo start -c
+```
 
 ---
 
-# 💾 Teste do AsyncStorage
+# Teste do AsyncStorage
 
 Para validar a persistência local:
 
-1. Crie um usuário;
-2. Cadastre um pet;
-3. Tire uma foto utilizando a câmera;
-4. Adicione um agendamento;
-5. Feche ou recarregue o aplicativo;
-6. Abra novamente e verifique se os dados continuam salvos.
+1. Crie um usuário.
+2. Cadastre um animal.
+3. Crie um agendamento.
+4. Confira os pontos no perfil ou na tela inicial.
+5. Recarregue ou reinicie o aplicativo.
+6. Abra novamente e confirme se usuário, animal, agendamento e pontos continuam salvos.
 
-## Chaves utilizadas
+## Chaves Utilizadas
 
 ```js
 @dobu:usuario
+@dobu:usuarios
 @dobu:pets
 @dobu:agendamentos
+@dobu:monitoramento
 @dobu:pontos
 ```
 
 ---
 
-# 🎥 Vídeo Demonstrativo
+# Integrantes
 
-📎 Link do vídeo no YouTube:  
-
-
----
-
-# 👨‍💻 Integrantes
-
-- Amandha Yumi Toyota Artulino — RM: 563549
-- Giovanna Bardella Gomes — RM: 561439
-- Erick Takeshi Nakajune — RM: 566059
+- Amandha Yumi Toyota Artulino - RM: 563549
+- Giovanna Bardella Gomes - RM: 561439
+- Erick Takeshi Nakajune - RM: 566059
 
 ---
 
-# 📌 Observações
+# Observações
 
-Este projeto foi desenvolvido para fins acadêmicos na disciplina de Mobile Application Development, utilizando dados mockados e funcionalidades simuladas para representar a proposta da solução.
+Este projeto foi desenvolvido para fins acadêmicos na disciplina de Mobile Application Development. Os dados são simulados e armazenados localmente para demonstrar o funcionamento do protótipo.
