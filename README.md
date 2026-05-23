@@ -201,7 +201,7 @@ Para validar a persistência local:
 
 ## Links:
 
-- Youtube: https://youtu.be/XzJ-ypr5y4I?si=5H6fLvWJC_rbiyBX
+- Youtube: https://youtu.be/Z82Qn_hXZEY?si=1N98I5WYqMi_j_AL
 - Protótipo figma: https://www.figma.com/design/mOXmQd2t8nKM3tjBE9g5Dn/Challenge?node-id=0-1&t=0iOFcpAzaf11TImb-1
 - Repositório: https://github.com/DobuChallenge/Dobu-Mobile
 
