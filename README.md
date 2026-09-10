@@ -130,6 +130,10 @@ Ao recarregar ou reiniciar o aplicativo, o app consulta o usuário salvo e retor
 
 ```bash
 src/
+  api/
+  hooks/
+  providers/
+  utils/
   components/
   screens/
   storage/
@@ -150,6 +154,25 @@ package.json
 ```bash
 npm install
 ```
+
+## Ambiente para a futura integração (Sprint 3)
+
+O TanStack Query está instalado e seu provider envolve a aplicação. A integração
+com a API ainda não foi implementada: o fluxo existente continua usando
+AsyncStorage, sem novos endpoints, mocks ou dados de exemplo.
+
+Copie `.env.example` para `.env.local` na raiz e, quando a API estiver disponível,
+preencha a URL base fornecida pela equipe:
+
+```dotenv
+EXPO_PUBLIC_API_URL=
+```
+
+`src/api/config.js` centraliza essa configuração. A variável pode ficar vazia
+ou ausente nesta preparação; o app continua usando o fluxo local.
+Nunca coloque tokens, senhas ou secrets em variáveis `EXPO_PUBLIC_`, pois seus
+valores ficam visíveis no aplicativo. `.env.local` é ignorado pelo Git.
+Após alterar a variável, recarregue completamente o app.
 
 ## Iniciar o projeto
 

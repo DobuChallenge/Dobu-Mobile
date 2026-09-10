@@ -2,6 +2,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import QueryProvider from './src/providers/QueryProvider';
 
 import AdicionarAgendamento from './src/screens/AdicionarAgendamento';
 import Agendamentos from './src/screens/Agendamentos';
@@ -24,33 +25,35 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style="dark" backgroundColor={cores.fundo} />
-        <Stack.Navigator
-          initialRouteName="Carregamento"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: cores.fundo },
-          }}
-        >
-          <Stack.Screen name="Carregamento" component={Carregamento} />
-          <Stack.Screen name="Inicial" component={Inicial} />
-          <Stack.Screen name="Cadastro" component={Cadastro} />
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="Inicio" component={Inicio} />
-          <Stack.Screen name="PerfilVeterinario" component={PerfilVeterinario} />
-          <Stack.Screen name="PerfilUsuario" component={PerfilUsuario} />
-          <Stack.Screen name="CadastroPet" component={CadastroPet} />
-          <Stack.Screen name="DobuCam" component={DobuCam} />
-          <Stack.Screen name="ListaPets" component={ListaPets} />
-          <Stack.Screen name="PerfilPet" component={PerfilPet} />
-          <Stack.Screen name="Lembretes" component={Lembretes} />
-          <Stack.Screen name="Informacoes" component={Informacoes} />
-          <Stack.Screen name="Agendamentos" component={Agendamentos} />
-          <Stack.Screen name="AdicionarAgendamento" component={AdicionarAgendamento} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </SafeAreaProvider>
+    <QueryProvider>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          <StatusBar style="dark" backgroundColor={cores.fundo} />
+          <Stack.Navigator
+            initialRouteName="Carregamento"
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: cores.fundo },
+            }}
+          >
+            <Stack.Screen name="Carregamento" component={Carregamento} />
+            <Stack.Screen name="Inicial" component={Inicial} />
+            <Stack.Screen name="Cadastro" component={Cadastro} />
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Inicio" component={Inicio} />
+            <Stack.Screen name="PerfilVeterinario" component={PerfilVeterinario} />
+            <Stack.Screen name="PerfilUsuario" component={PerfilUsuario} />
+            <Stack.Screen name="CadastroPet" component={CadastroPet} />
+            <Stack.Screen name="DobuCam" component={DobuCam} />
+            <Stack.Screen name="ListaPets" component={ListaPets} />
+            <Stack.Screen name="PerfilPet" component={PerfilPet} />
+            <Stack.Screen name="Lembretes" component={Lembretes} />
+            <Stack.Screen name="Informacoes" component={Informacoes} />
+            <Stack.Screen name="Agendamentos" component={Agendamentos} />
+            <Stack.Screen name="AdicionarAgendamento" component={AdicionarAgendamento} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </QueryProvider>
   );
 }
