@@ -157,12 +157,12 @@ npm install
 
 ## Ambiente para a futura integração (Sprint 3)
 
-O TanStack Query está instalado e seu provider envolve a aplicação. A integração
-com a API ainda não foi implementada: o fluxo existente continua usando
-AsyncStorage, sem novos endpoints, mocks ou dados de exemplo.
+O TanStack Query está instalado e seu provider envolve a aplicação. A camada
+HTTP está disponível em `src/api`, mas as telas ainda não estão conectadas à API.
+O fluxo existente continua usando AsyncStorage.
 
 Copie `.env.example` para `.env.local` na raiz e, quando a API estiver disponível,
-preencha a URL base fornecida pela equipe:
+preencha a URL base fornecida pela equipe, sem o sufixo `/api`:
 
 ```dotenv
 EXPO_PUBLIC_API_URL=
@@ -173,6 +173,35 @@ ou ausente nesta preparação; o app continua usando o fluxo local.
 Nunca coloque tokens, senhas ou secrets em variáveis `EXPO_PUBLIC_`, pois seus
 valores ficam visíveis no aplicativo. `.env.local` é ignorado pelo Git.
 Após alterar a variável, recarregue completamente o app.
+
+## Camada HTTP
+
+`authApi` (`src/api/auth.js`) expõe `login` e `cadastrar` conforme `AuthController`
+e `AuthDtos` do backend. As respostas contêm `token`, `usuarioId`, `nome`, `email`
+e `tipoUsuario`. Essas funções não iniciam uma sessão automaticamente.
+
+`petsApi` e `agendamentosApi` expõem listagem, consulta por ID, criação,
+atualização, exclusão e os filtros definidos nos respectivos controllers.
+Os corpos enviados contêm apenas os campos dos contratos `PetRequest` e
+`AgendamentoRequest`. As respostas JSON são devolvidas sem adaptação aos modelos
+locais; exclusões com status 204 retornam `undefined`.
+
+Na futura integração de sessão, use `setAuthToken(resposta.token)` de
+`src/api/httpClient.js` após autenticar e `setAuthToken(null)` ao sair.
+O token fica apenas em memória e é incluído como Bearer nas requisições protegidas.
+Login e cadastro não enviam esse header. Não há persistência, renovação automática
+de token ou fallback para dados locais nessa camada.
+
+O cliente centraliza JSON, headers e timeout de 15 segundos. Uma chamada sem URL
+válida produz `ApiError`; os erros expõem `message`, `code` e `status` seguros,
+sem incluir corpos de erro do servidor ou credenciais.
+
+Execute `npm test` com Node.js 22.7 ou superior para validar a camada sem servidor.
+Os testes substituem o transporte de rede somente durante sua execução.
+A leitura IoT usa `src/api/dobuCam.js` e o mesmo transporte HTTP centralizado.
+O endereço do dispositivo continua sendo informado na tela, separado da URL base
+do backend configurada no ambiente. Requisições ao dispositivo nunca enviam o
+token de autenticação do backend.
 
 ## Iniciar o projeto
 

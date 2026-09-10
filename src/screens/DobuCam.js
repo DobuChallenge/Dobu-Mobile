@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { dobuCamApi } from '../api/dobuCam';
 import BottomNavigation from '../components/BottomNavigation';
 import Card from '../components/Card';
 import DobuLogo from '../components/DobuLogo';
@@ -151,8 +152,7 @@ export default function DobuCam({ navigation }) {
   }
 
   async function lerStatusDobuCam(urlStatus, urlFrame) {
-    const resposta = await fetch(urlStatus);
-    const dados = await resposta.json();
+    const dados = await dobuCamApi.lerStatus(urlStatus);
     const leitura = normalizarLeitura(dados);
     await aplicarLeitura(leitura, urlFrame);
   }
@@ -229,7 +229,7 @@ export default function DobuCam({ navigation }) {
             style={styles.inputUrl}
           />
           <Pressable
-            onPress={conectando ? undefined : conectarDispositivo}
+            onPress={conectando ? undefined : () => conectarDispositivo()}
             style={({ pressed }) => [styles.botaoConectar, pressed && styles.pressionado]}
           >
             <Ionicons name="wifi-outline" size={22} color={cores.branco} />
