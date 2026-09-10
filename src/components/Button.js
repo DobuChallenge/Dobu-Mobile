@@ -2,13 +2,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { cores } from '../styles/tema';
 
-export default function Button({ title, icon, cor = 'amarelo', onPress, style }) {
+export default function Button({ title, icon, cor = 'amarelo', onPress, style, disabled = false }) {
   const branco = cor === 'branco';
   const cinzaEscuro = cor === 'cinzaEscuro';
   const vermelho = cor === 'vermelho';
 
   return (
     <Pressable
+      disabled={disabled}
+      accessibilityState={{ disabled }}
       onPress={onPress}
       style={({ pressed }) => [
         styles.botao,

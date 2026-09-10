@@ -2,7 +2,7 @@
 
 Dobu Mobile é um protótipo funcional desenvolvido em React Native com Expo. A proposta é ajudar responsáveis e profissionais veterinários a organizar informações importantes da rotina de cuidado dos animais.
 
-O aplicativo reúne cadastro de usuários, login simulado, gerenciamento de pets, lembretes, agendamentos, guia de informações e uma simulação de monitoramento pela Dobu-Cam. O projeto usa navegação entre telas, formulários controlados com `useState` e persistência local com AsyncStorage.
+O aplicativo reúne cadastro e login pela API, gerenciamento de pets, lembretes, agendamentos, guia de informações e uma simulação de monitoramento pela Dobu-Cam. A sessão usa Expo SecureStore; pets, agendamentos e monitoramento continuam armazenados localmente com AsyncStorage.
 
 ---
 
@@ -13,7 +13,7 @@ O objetivo do Dobu Mobile é centralizar dados importantes da vida do animal e a
 Com o app, o usuário consegue:
 
 - cadastrar responsáveis e veterinários;
-- fazer login simulado;
+- fazer login pela API;
 - cadastrar e visualizar animais;
 - organizar consultas, vacinas, retornos, exames e outros cuidados;
 - consultar lembretes e agendamentos;
@@ -44,6 +44,8 @@ Na tela da Dobu-Cam é possível:
 - Expo
 - React Navigation
 - AsyncStorage
+- Expo SecureStore
+- TanStack Query
 - Expo Image Picker
 - Expo File System
 - @expo/vector-icons
@@ -57,7 +59,8 @@ Na tela da Dobu-Cam é possível:
 - Tela de carregamento;
 - Tela inicial;
 - Cadastro de usuário;
-- Login simulado;
+- Login e cadastro reais pela API;
+- Restauração da sessão e logout;
 - Fluxo para responsável;
 - Fluxo para veterinário;
 - Mais de cinco rotas navegáveis usando React Navigation.
@@ -101,14 +104,12 @@ Cada usuário possui sua própria pontuação.
 
 Os dados são persistidos com AsyncStorage:
 
-- usuário logado;
-- lista de usuários;
 - pets;
 - agendamentos;
 - monitoramento;
 - pontos por usuário.
 
-Ao recarregar ou reiniciar o aplicativo, o app consulta o usuário salvo e retorna ao fluxo correto. Os dados cadastrados continuam disponíveis localmente.
+A sessão é persistida separadamente no SecureStore, sem senha. Ao reiniciar, o app restaura uma sessão não expirada e retorna ao fluxo do perfil. Os registros antigos de usuários simulados são removidos; não são usados como credenciais.
 
 ---
 
@@ -158,8 +159,8 @@ npm install
 ## Ambiente para a futura integração (Sprint 3)
 
 O TanStack Query está instalado e seu provider envolve a aplicação. A camada
-HTTP está disponível em `src/api`, mas as telas ainda não estão conectadas à API.
-O fluxo existente continua usando AsyncStorage.
+HTTP está disponível em `src/api`. Login e cadastro estão conectados ao backend;
+as telas de pets e agendamentos continuam usando dados locais.
 
 Copie `.env.example` para `.env.local` na raiz e, quando a API estiver disponível,
 preencha a URL base fornecida pela equipe, sem o sufixo `/api`:
@@ -168,8 +169,10 @@ preencha a URL base fornecida pela equipe, sem o sufixo `/api`:
 EXPO_PUBLIC_API_URL=
 ```
 
-`src/api/config.js` centraliza essa configuração. A variável pode ficar vazia
-ou ausente nesta preparação; o app continua usando o fluxo local.
+`src/api/config.js` centraliza essa configuração. A URL precisa estar configurada
+e acessível pelo dispositivo para realizar login ou cadastro. Não há login local
+quando a API está indisponível. Em celular físico, `localhost` aponta para o próprio
+celular: use o endereço acessível do servidor na rede.
 Nunca coloque tokens, senhas ou secrets em variáveis `EXPO_PUBLIC_`, pois seus
 valores ficam visíveis no aplicativo. `.env.local` é ignorado pelo Git.
 Após alterar a variável, recarregue completamente o app.
@@ -186,11 +189,38 @@ Os corpos enviados contêm apenas os campos dos contratos `PetRequest` e
 `AgendamentoRequest`. As respostas JSON são devolvidas sem adaptação aos modelos
 locais; exclusões com status 204 retornam `undefined`.
 
-Na futura integração de sessão, use `setAuthToken(resposta.token)` de
-`src/api/httpClient.js` após autenticar e `setAuthToken(null)` ao sair.
-O token fica apenas em memória e é incluído como Bearer nas requisições protegidas.
-Login e cadastro não enviam esse header. Não há persistência, renovação automática
-de token ou fallback para dados locais nessa camada.
+O controlador de sessão configura o Bearer no cliente HTTP após login, cadastro
+ou restauração. Login e cadastro não enviam esse header. O backend não fornece
+refresh token; uma sessão expirada exige novo login.
+
+## Autenticação e sessão
+
+`AuthProvider` expõe `user`, `isAuthenticated`, `restoring`, `restoreError`,
+`restore` e `logout` por `useAuth`. `useLogin` e `useRegister` usam mutations sem
+retry automático. As telas validam campos antes do envio e apresentam mensagens
+de carregamento, sucesso e erro. O backend continua sendo a autoridade de validação.
+
+O SecureStore persiste apenas `token`, `usuarioId`, `nome`, `email` e `tipoUsuario`.
+Senhas não são persistidas ou registradas no console. A restauração verifica a
+expiração do JWT localmente; a API valida sua assinatura nas chamadas protegidas.
+O logout remove a sessão segura, limpa o token em memória e cancela/limpa o cache.
+A proteção completa das rotas ainda não foi implementada.
+
+O cadastro solicita os quatro campos aceitos pela API: nome, email, senha e tipo
+de usuário. Foto, CPF e CRMV não fazem parte desse contrato. A exclusão de conta
+pela interface ainda não está integrada. A antiga lista local de usuários foi
+removida; a seleção de veterinários consulta `/api/usuarios` sem persistir contas.
+
+Para verificar no Android/iOS: configure a API, cadastre uma conta, saia, teste
+uma senha incorreta, entre com a senha correta, feche e reabra o app e confirme
+o perfil restaurado. Saia novamente e reabra para confirmar que a sessão foi removida.
+
+O teste `node --test tests/auth.integration.test.js` usa `EXPO_PUBLIC_API_URL`
+do ambiente, cadastra uma conta temporária com credenciais aleatórias e a remove
+ao terminar. Execute somente contra uma base de desenvolvimento descartável.
+Ele valida o cliente e o ciclo de sessão contra o backend real; o armazenamento
+nesse teste é um arquivo temporário. A persistência nativa do SecureStore requer
+validação em dispositivo ou emulador. Não há credenciais de demonstração no app.
 
 O cliente centraliza JSON, headers e timeout de 15 segundos. Uma chamada sem URL
 válida produz `ApiError`; os erros expõem `message`, `code` e `status` seguros,
@@ -241,8 +271,6 @@ Para validar a persistência local:
 ## Chaves Utilizadas
 
 ```js
-@dobu:usuario
-@dobu:usuarios
 @dobu:pets
 @dobu:agendamentos
 @dobu:monitoramento

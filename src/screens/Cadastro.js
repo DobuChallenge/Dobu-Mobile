@@ -6,111 +6,36 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import DobuLogo from '../components/DobuLogo';
 import Header from '../components/Header';
-import PhotoPicker from '../components/PhotoPicker';
-import { obterUsuarioPorCpf, obterUsuarioPorEmail, salvarUsuario } from '../storage/armazenamento';
+import { useRegister } from '../hooks/useAuth';
+import { validateRegister } from '../utils/authValidation';
+import { ApiError } from '../api/httpClient';
 import { cores } from '../styles/tema';
-
-const UFS = [
-  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO',
-  'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI',
-  'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
-];
-
-function limparEmail(valor) {
-  return valor.trim().toLowerCase();
-}
-
-function emailValido(valor) {
-  return /\S+@\S+\.\S+/.test(valor);
-}
 
 export default function Cadastro({ navigation }) {
   const [nomeUsuario, setNomeUsuario] = useState('');
   const [emailUsuario, setEmailUsuario] = useState('');
-  const [cpfUsuario, setCpfUsuario] = useState('');
   const [senha, setSenha] = useState('');
-  const [foto, setFoto] = useState('');
   const [tipoConta, setTipoConta] = useState('responsavel');
-  const [crmv, setCrmv] = useState('');
-  const [ufCrmv, setUfCrmv] = useState('');
-  const [ufAberta, setUfAberta] = useState(false);
-  const [salvando, setSalvando] = useState(false);
+  const cadastro = useRegister();
+  const salvando = cadastro.isPending;
 
   async function cadastrar() {
-    const nome = nomeUsuario.trim();
-    const email = limparEmail(emailUsuario);
-    const cpf = cpfUsuario.trim();
-    const crmvTratado = crmv.trim();
-    const ufCrmvTratada = ufCrmv.trim().toUpperCase();
-    const camposVazios = [];
-
-    if (!nome) camposVazios.push('nome');
-    if (!email) camposVazios.push('email');
-    if (!cpf) camposVazios.push('CPF');
-    if (!senha) camposVazios.push('senha');
-    if (tipoConta === 'veterinario' && !crmvTratado) camposVazios.push('CRMV');
-    if (tipoConta === 'veterinario' && !ufCrmvTratada) camposVazios.push('UF do CRMV');
-
-    if (camposVazios.length > 0) {
-      Alert.alert('Cadastro incompleto', `Falta preencher: ${camposVazios.join(', ')}.`);
+    if (salvando) return;
+    const dados = { nome: nomeUsuario.trim(), email: emailUsuario.trim().toLowerCase(), senha, tipoUsuario: tipoConta.toUpperCase() };
+    const erroValidacao = validateRegister(dados);
+    if (erroValidacao) {
+      Alert.alert('Confira os dados', erroValidacao);
       return;
     }
-
-    if (!emailValido(email)) {
-      Alert.alert('Email inválido', 'Digite um email válido.');
-      return;
-    }
-
-    if (senha.length < 6) {
-      Alert.alert('Senha fraca', 'Use pelo menos 6 caracteres.');
-      return;
-    }
-
     try {
-      setSalvando(true);
-      const usuarioExistente = await obterUsuarioPorEmail(email);
-      const cpfExistente = await obterUsuarioPorCpf(cpf);
-
-      if (usuarioExistente) {
-        Alert.alert('Email já cadastrado', 'Use outro email ou faça login com esta conta.');
-        return;
-      }
-
-      if (cpfExistente) {
-        Alert.alert('CPF já cadastrado', 'Use outro CPF para criar uma nova conta.');
-        return;
-      }
-
-      await salvarUsuario({
-        id: Date.now().toString(),
-        nome,
-        email,
-        cpf,
-        senha,
-        foto,
-        tipoConta,
-        crmv: tipoConta === 'veterinario' ? crmvTratado : '',
-        ufCrmv: tipoConta === 'veterinario' ? ufCrmvTratada : '',
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
-      });
-
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!', [
-        { text: 'Entrar', onPress: () => navigation.replace(tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio') },
-      ]);
+      const usuario = await cadastro.mutateAsync(dados);
+      setSenha('');
+      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+      navigation.reset({ index: 0, routes: [{ name: usuario.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio' }] });
     } catch (error) {
-      console.log('ERRO CADASTRO:', error);
-      if (error.code === 'EMAIL_DUPLICADO') {
-        Alert.alert('Email já cadastrado', 'Use outro email ou faça login com esta conta.');
-        return;
-      }
-      if (error.code === 'CPF_DUPLICADO') {
-        Alert.alert('CPF já cadastrado', 'Use outro CPF para criar uma nova conta.');
-        return;
-      }
-      Alert.alert('Erro', 'Não foi possível salvar o cadastro.');
+      Alert.alert('Erro no cadastro', error instanceof ApiError ? error.message : 'Não foi possível realizar o cadastro.');
     } finally {
-      setSalvando(false);
+      cadastro.reset();
     }
   }
 
@@ -121,7 +46,6 @@ export default function Cadastro({ navigation }) {
         <Header navigation={navigation} title="Cadastro" subtitle="Crie o seu perfil dobu" />
 
         <Card style={styles.cardCadastro}>
-          <PhotoPicker photo={foto} onChangePhoto={setFoto} title="Foto de perfil" />
 
           <Text style={styles.label}>Tipo de conta:</Text>
           <View style={styles.tipoLinha}>
@@ -145,29 +69,12 @@ export default function Cadastro({ navigation }) {
             placeholder="Digite seu email..."
             keyboardType="email-address"
           />
-          <Campo label="CPF:" value={cpfUsuario} onChangeText={setCpfUsuario} placeholder="Digite seu cpf" />
-          {tipoConta === 'veterinario' ? (
-            <>
-              <Campo label="CRMV:" value={crmv} onChangeText={setCrmv} placeholder="Digite seu CRMV" keyboardType="numeric" />
-              <SelectDropdown
-                label="UF do CRMV:"
-                options={UFS.map((uf) => ({ label: uf, value: uf }))}
-                value={ufCrmv}
-                placeholder="Selecione o estado"
-                aberto={ufAberta}
-                onToggle={() => setUfAberta((valor) => !valor)}
-                onChange={(valor) => {
-                  setUfCrmv(valor);
-                  setUfAberta(false);
-                }}
-              />
-            </>
-          ) : null}
           <Campo label="Senha:" value={senha} onChangeText={setSenha} placeholder="Digite uma senha..." secureTextEntry />
 
           <Button
             title={salvando ? 'Salvando...' : 'Cadastre-se'}
             onPress={salvando ? undefined : cadastrar}
+            disabled={salvando}
             cor="cinzaEscuro"
             style={styles.botao}
           />
@@ -185,38 +92,6 @@ function TipoContaOpcao({ ativo, label, onPress }) {
   );
 }
 
-function SelectDropdown({ label, options, value, placeholder, aberto, onToggle, onChange }) {
-  const selecionado = options.find((option) => option.value === value);
-
-  return (
-    <View style={styles.campo}>
-      <Text style={styles.label}>{label}</Text>
-      <Pressable onPress={onToggle} style={styles.selectCampo}>
-        <Text style={[styles.selectValor, !selecionado && styles.selectPlaceholder]}>
-          {selecionado?.label || placeholder}
-        </Text>
-        <Text style={styles.selectSeta}>{aberto ? '▲' : '▼'}</Text>
-      </Pressable>
-      {aberto ? (
-        <View style={styles.selectLista}>
-          {options.map((option) => {
-            const ativo = value === option.value;
-            return (
-              <Pressable
-                key={option.value}
-                onPress={() => onChange(option.value)}
-                style={[styles.selectOpcao, ativo && styles.selectOpcaoAtiva]}
-              >
-                <Text style={[styles.selectOpcaoTexto, ativo && styles.selectOpcaoTextoAtivo]}>{option.label}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : null}
-    </View>
-  );
-}
-
 function Campo({ label, value, onChangeText, placeholder, secureTextEntry, keyboardType }) {
   return (
     <View style={styles.campo}>
@@ -228,6 +103,8 @@ function Campo({ label, value, onChangeText, placeholder, secureTextEntry, keybo
         placeholderTextColor="#9B9B9B"
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
+        autoCapitalize={keyboardType === 'email-address' || secureTextEntry ? 'none' : 'sentences'}
+        autoCorrect={!secureTextEntry && keyboardType !== 'email-address'}
         style={styles.input}
       />
     </View>

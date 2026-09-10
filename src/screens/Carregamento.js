@@ -10,38 +10,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import DobuLogo from '../components/DobuLogo';
-import { obterUsuario } from '../storage/armazenamento';
+import { useAuth } from '../hooks/useAuth';
+import Button from '../components/Button';
 import { cores } from '../styles/tema';
 
 export default function Carregamento({ navigation }) {
 
+  const { user, restoring, restoreError, restore } = useAuth();
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      async function abrirFluxoInicial() {
-        try {
-          const usuarioSalvo = await obterUsuario();
-
-          if (usuarioSalvo?.tipoConta === 'veterinario') {
-            navigation.replace('PerfilVeterinario');
-            return;
-          }
-
-          if (usuarioSalvo) {
-            navigation.replace('Inicio');
-            return;
-          }
-        } catch (error) {
-          console.log('ERRO AO CARREGAR USUARIO:', error);
-        }
-
-        navigation.replace('Inicial');
-      }
-
-      abrirFluxoInicial();
-    }, 1800);
-
-    return () => clearTimeout(timer);
-  }, [navigation]);
+    if (restoring || restoreError) return;
+    const destino = user ? (user.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio') : 'Inicial';
+    navigation.replace(destino);
+  }, [navigation, user, restoring, restoreError]);
 
   return (
     <SafeAreaView style={styles.tela}>
@@ -55,11 +36,16 @@ export default function Carregamento({ navigation }) {
         </Text>
       </View>
 
-      <ActivityIndicator
+      {restoreError ? (
+        <View>
+          <Text>{restoreError}</Text>
+          <Button title="Tentar novamente" onPress={restore} />
+        </View>
+      ) : <ActivityIndicator
         size="small"
         color={cores.areia}
         style={styles.loading}
-      />
+      />}
 
     </SafeAreaView>
   );

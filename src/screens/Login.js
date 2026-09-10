@@ -8,44 +8,35 @@ import TextInput from '../components/TextInput';
 import Card from '../components/Card';
 import DobuLogo from '../components/DobuLogo';
 
-import { definirUsuarioAtual, obterUsuarioPorEmail } from '../storage/armazenamento';
+import { useLogin } from '../hooks/useAuth';
+import { validateLogin } from '../utils/authValidation';
+import { ApiError } from '../api/httpClient';
 import { estilos } from '../styles/globalStyles';
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
-  const [entrando, setEntrando] = useState(false);
+  const login = useLogin();
+  const entrando = login.isPending;
 
   async function entrar() {
     const emailTratado = email.trim().toLowerCase();
-
-    if (!emailTratado || !senha) {
-      Alert.alert('Login incompleto', 'Informe email e senha.');
+    if (entrando) return;
+    const erroValidacao = validateLogin(emailTratado, senha);
+    if (erroValidacao) {
+      Alert.alert('Confira os dados', erroValidacao);
       return;
     }
 
     try {
-      setEntrando(true);
-      const usuarioSalvo = await obterUsuarioPorEmail(emailTratado);
-
-      if (!usuarioSalvo) {
-        Alert.alert('Sem cadastro', 'Não encontramos uma conta com este email.');
-        return;
-      }
-
-      if (emailTratado === usuarioSalvo.email && senha === usuarioSalvo.senha) {
-        await definirUsuarioAtual(usuarioSalvo);
-        Alert.alert('Bem-vindo!', 'Login realizado com sucesso.');
-        navigation.replace(usuarioSalvo.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio');
-        return;
-      }
-
-      Alert.alert('Dados incorretos', 'Email ou senha não conferem com o cadastro salvo.');
+      const usuario = await login.mutateAsync({ email: emailTratado, senha });
+      setSenha('');
+      Alert.alert('Bem-vindo!', 'Login realizado com sucesso.');
+      navigation.reset({ index: 0, routes: [{ name: usuario.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio' }] });
     } catch (error) {
-      console.log(error);
-      Alert.alert('Erro', 'Não foi possível fazer login.');
+      Alert.alert('Erro ao entrar', error instanceof ApiError ? error.message : 'Não foi possível fazer login.');
     } finally {
-      setEntrando(false);
+      login.reset();
     }
   }
 
@@ -89,6 +80,7 @@ export default function Login({ navigation }) {
           <Button
             title={entrando ? 'Entrando...' : 'Login'}
             onPress={entrando ? undefined : entrar}
+            disabled={entrando}
             style={{ marginHorizontal: 34 }}
             cor="cinzaEscuro"
           />

@@ -7,13 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F1F1F1"
     },
-
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -21,7 +19,6 @@
         "NSPhotoLibraryUsageDescription": "O Dobu usa a galeria para escolher fotos do usuário e dos pets."
       }
     },
-
     "android": {
       "usesCleartextTraffic": true,
       "permissions": [
@@ -36,9 +33,11 @@
       },
       "edgeToEdgeEnabled": true
     },
-
     "web": {
       "favicon": "./assets/favicon.ico"
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

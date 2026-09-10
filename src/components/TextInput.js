@@ -18,6 +18,8 @@ export default function TextInput({ label, value, onChangeText, placeholder, sec
           placeholderTextColor={cores.textoClaro}
           secureTextEntry={senhaEscondida}
           keyboardType={keyboardType}
+          autoCapitalize={keyboardType === 'email-address' || secureTextEntry ? 'none' : 'sentences'}
+          autoCorrect={!secureTextEntry && keyboardType !== 'email-address'}
           multiline={multiline}
           style={[styles.input, multiline && styles.multiline, secureTextEntry && styles.inputSenha]}
         />

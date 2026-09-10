@@ -11,7 +11,6 @@ import DobuLogo from '../components/DobuLogo';
 import BottomNavigation from '../components/BottomNavigation';
 
 import {
-  excluirContaAtual,
   obterAgendamentos,
   obterPets,
   obterPontos,
@@ -20,8 +19,10 @@ import {
 
 import { estilos } from '../styles/globalStyles';
 import { cores } from '../styles/tema';
+import { useAuth } from '../hooks/useAuth';
 
 export default function PerfilUsuario({ navigation }) {
+  const { logout } = useAuth();
   const [usuario, setUsuario] = useState(null);
   const [pontos, setPontos] = useState(0);
   const [pets, setPets] = useState([]);
@@ -55,26 +56,17 @@ export default function PerfilUsuario({ navigation }) {
     }, [])
   );
 
-  function sair() {
-    navigation.reset({ index: 0, routes: [{ name: 'Inicial' }] });
+  async function sair() {
+    try {
+      await logout();
+      navigation.reset({ index: 0, routes: [{ name: 'Inicial' }] });
+    } catch {
+      Alert.alert('Erro ao sair', 'Não foi possível remover a sessão salva. Tente sair novamente.');
+    }
   }
 
   function confirmarExcluirConta() {
-    Alert.alert(
-      'Deletar conta',
-      'Deseja apagar esta conta? Os dados ligados a ela, como pontos, animais e agendamentos, também serão removidos.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Deletar',
-          style: 'destructive',
-          onPress: async () => {
-            await excluirContaAtual();
-            navigation.reset({ index: 0, routes: [{ name: 'Inicial' }] });
-          },
-        },
-      ]
-    );
+    Alert.alert('Excluir conta', 'A exclusão da conta ainda não está disponível nesta versão.');
   }
 
   const fotoValida =

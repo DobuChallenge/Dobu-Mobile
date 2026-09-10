@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { session } from '../auth/session';
+import { usuariosApi } from '../api/usuarios';
 import { CHAVES } from './chaves';
 
 async function obterJSON(chave, valorPadrao) {
@@ -21,63 +23,14 @@ async function salvarJSON(chave, valor) {
 }
 
 export async function obterUsuario() {
-  return obterJSON(CHAVES.USUARIO, null);
+  return session.getUser();
 }
 
 export async function obterUsuarios() {
-  const usuarios = await obterJSON(CHAVES.USUARIOS, []);
-  if (usuarios.length > 0) return usuarios;
-
-  const usuarioAtual = await obterUsuario();
-  return usuarioAtual ? [usuarioAtual] : [];
-}
-
-export async function obterUsuarioPorEmail(email) {
-  const emailTratado = email.trim().toLowerCase();
-  const usuarios = await obterUsuarios();
-  return usuarios.find((usuario) => usuario.email === emailTratado) || null;
-}
-
-export async function obterUsuarioPorCpf(cpf) {
-  const cpfTratado = cpf.replace(/\D/g, '');
-  const usuarios = await obterUsuarios();
-  return usuarios.find((usuario) => (usuario.cpf || '').replace(/\D/g, '') === cpfTratado) || null;
-}
-
-export async function definirUsuarioAtual(usuario) {
-  await salvarJSON(CHAVES.USUARIO, usuario);
-}
-
-export async function salvarUsuario(usuario) {
-  const usuarios = await obterUsuarios();
-  const cpfTratado = (usuario.cpf || '').replace(/\D/g, '');
-  const emailDuplicado = usuarios.some(
-    (item) => item.email === usuario.email && item.id !== usuario.id
-  );
-  const cpfDuplicado = usuarios.some(
-    (item) => (item.cpf || '').replace(/\D/g, '') === cpfTratado && item.id !== usuario.id
-  );
-
-  if (emailDuplicado) {
-    const erro = new Error('EMAIL_DUPLICADO');
-    erro.code = 'EMAIL_DUPLICADO';
-    throw erro;
-  }
-
-  if (cpfDuplicado) {
-    const erro = new Error('CPF_DUPLICADO');
-    erro.code = 'CPF_DUPLICADO';
-    throw erro;
-  }
-
-  const indiceExistente = usuarios.findIndex((item) => item.id === usuario.id);
-  const usuariosAtualizados =
-    indiceExistente >= 0
-      ? usuarios.map((item) => (item.id === usuario.id ? usuario : item))
-      : [...usuarios, usuario];
-
-  await salvarJSON(CHAVES.USUARIOS, usuariosAtualizados);
-  await salvarJSON(CHAVES.USUARIO, usuario);
+  const usuarios = await usuariosApi.listar();
+  return usuarios.map(({ id, nome, email, tipoUsuario }) => ({
+    id, nome, email, tipoConta: tipoUsuario.toLowerCase(),
+  }));
 }
 
 export async function obterPets() {
@@ -190,63 +143,8 @@ export async function adicionarPontos(quantidade) {
   return total;
 }
 
-export async function excluirContaAtual() {
-  const usuarioAtual = await obterUsuario();
-  if (!usuarioAtual?.id) return;
-
-  const [usuarios, pontosSalvos, pets, agendamentos] = await Promise.all([
-    obterJSON(CHAVES.USUARIOS, []),
-    obterJSON(CHAVES.PONTOS, {}),
-    obterJSON(CHAVES.PETS, []),
-    obterJSON(CHAVES.AGENDAMENTOS, []),
-  ]);
-
-  const usuariosAtualizados = usuarios.filter((usuario) => usuario.id !== usuarioAtual.id);
-  const petsDoUsuario = pets.filter((pet) => pet.responsavelId === usuarioAtual.id);
-  const idsPetsDoUsuario = new Set(petsDoUsuario.map((pet) => pet.id));
-  const nomesPetsDoUsuario = new Set(
-    petsDoUsuario.map((pet) => (pet.nome || '').trim().toLowerCase())
-  );
-  const ehVeterinario = usuarioAtual.tipoConta === 'veterinario';
-  const nomeUsuario = (usuarioAtual.nome || '').trim().toLowerCase();
-
-  const petsAtualizados = ehVeterinario
-    ? pets
-    : pets.filter((pet) => pet.responsavelId !== usuarioAtual.id);
-  const agendamentosAtualizados = agendamentos.filter((agendamento) => {
-    if (ehVeterinario) {
-      const mesmoVeterinario =
-        agendamento.veterinarioId === usuarioAtual.id ||
-        (agendamento.veterinario || '').trim().toLowerCase() === nomeUsuario;
-
-      return !mesmoVeterinario;
-    }
-
-    const mesmoResponsavel = agendamento.responsavelId === usuarioAtual.id;
-    const mesmoPetId = idsPetsDoUsuario.has(agendamento.petId);
-    const mesmoPetLegado =
-      !agendamento.petId &&
-      nomesPetsDoUsuario.has((agendamento.pet || '').trim().toLowerCase());
-
-    return !mesmoResponsavel && !mesmoPetId && !mesmoPetLegado;
-  });
-  const pontosPorUsuario =
-    typeof pontosSalvos === 'number'
-      ? {}
-      : { ...pontosSalvos };
-
-  delete pontosPorUsuario[usuarioAtual.id];
-
-  await Promise.all([
-    salvarJSON(CHAVES.USUARIOS, usuariosAtualizados),
-    salvarJSON(CHAVES.PETS, petsAtualizados),
-    salvarJSON(CHAVES.AGENDAMENTOS, agendamentosAtualizados),
-    salvarJSON(CHAVES.PONTOS, pontosPorUsuario),
-    AsyncStorage.removeItem(CHAVES.USUARIO),
-  ]);
-}
-
 export async function limparDadosDobu() {
+  await session.logout();
   await AsyncStorage.multiRemove([
     CHAVES.USUARIO,
     CHAVES.USUARIOS,
