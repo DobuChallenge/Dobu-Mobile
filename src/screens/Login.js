@@ -29,10 +29,9 @@ export default function Login({ navigation }) {
     }
 
     try {
-      const usuario = await login.mutateAsync({ email: emailTratado, senha });
+      await login.mutateAsync({ email: emailTratado, senha });
       setSenha('');
       Alert.alert('Bem-vindo!', 'Login realizado com sucesso.');
-      navigation.reset({ index: 0, routes: [{ name: usuario.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio' }] });
     } catch (error) {
       Alert.alert('Erro ao entrar', error instanceof ApiError ? error.message : 'Não foi possível fazer login.');
     } finally {

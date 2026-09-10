@@ -204,7 +204,14 @@ O SecureStore persiste apenas `token`, `usuarioId`, `nome`, `email` e `tipoUsuar
 Senhas não são persistidas ou registradas no console. A restauração verifica a
 expiração do JWT localmente; a API valida sua assinatura nas chamadas protegidas.
 O logout remove a sessão segura, limpa o token em memória e cancela/limpa o cache.
-A proteção completa das rotas ainda não foi implementada.
+`src/navigation/routeConfig.js` declara os grupos de rotas. Durante a restauração
+(ou erro ao restaurar), somente `Carregamento` fica disponível. Sem sessão, o
+navegador registra `Inicial`, `Login` e `Cadastro`. Com sessão, registra apenas
+as telas internas e abre `Inicio` ou `PerfilVeterinario`, conforme o perfil.
+A mudança de sessão remonta o stack e remove o histórico anterior. Login,
+cadastro e logout não fazem redirecionamentos manuais para trocar de grupo.
+As rotas internas exigem sessão; permissões específicas de negócio dependem
+do backend e não são substituídas por esse controle de navegação.
 
 O cadastro solicita os quatro campos aceitos pela API: nome, email, senha e tipo
 de usuário. Foto, CPF e CRMV não fazem parte desse contrato. A exclusão de conta

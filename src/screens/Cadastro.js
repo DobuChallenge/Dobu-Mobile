@@ -28,10 +28,9 @@ export default function Cadastro({ navigation }) {
       return;
     }
     try {
-      const usuario = await cadastro.mutateAsync(dados);
+      await cadastro.mutateAsync(dados);
       setSenha('');
       Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
-      navigation.reset({ index: 0, routes: [{ name: usuario.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio' }] });
     } catch (error) {
       Alert.alert('Erro no cadastro', error instanceof ApiError ? error.message : 'Não foi possível realizar o cadastro.');
     } finally {

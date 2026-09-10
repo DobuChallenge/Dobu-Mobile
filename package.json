@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --test tests/api.test.js tests/session.test.js",
+    "test": "node --test tests/api.test.js tests/session.test.js tests/navigation.test.js",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",

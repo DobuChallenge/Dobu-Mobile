@@ -59,9 +59,10 @@ export default function PerfilUsuario({ navigation }) {
   async function sair() {
     try {
       await logout();
-      navigation.reset({ index: 0, routes: [{ name: 'Inicial' }] });
     } catch {
-      Alert.alert('Erro ao sair', 'Não foi possível remover a sessão salva. Tente sair novamente.');
+      Alert.alert('Erro ao sair', 'Não foi possível remover a sessão salva.', [
+        { text: 'Tentar novamente', onPress: sair },
+      ]);
     }
   }
 

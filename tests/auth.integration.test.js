@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { randomUUID, randomBytes } from 'node:crypto';
-import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile, rm, rmdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import { QueryClient } from '@tanstack/react-query';
 import { authApi } from '../src/api/auth.js';
+import { usuariosApi } from '../src/api/usuarios.js';
 import { request, setAuthToken } from '../src/api/httpClient.js';
 import { createSessionController } from '../src/auth/sessionController.js';
 
@@ -28,6 +29,9 @@ test('backend real: cadastro, login, senha incorreta, restauração e logout', {
     usuarioId = user.id;
     assert.equal(user.email, email);
     assert.equal(user.tipoConta, 'responsavel');
+    const users = await usuariosApi.listar();
+    assert.ok(users.some((item) => item.id === usuarioId));
+    assert.ok(users.every((item) => item.senha === undefined));
     assert.ok(Array.isArray(await request('/api/pets')));
     await session.logout();
     await assert.rejects(request('/api/pets'), { status: 401 });
@@ -55,10 +59,11 @@ test('backend real: cadastro, login, senha incorreta, restauração e logout', {
       try {
         await session.login({ email, senha });
         await request(`/api/usuarios/${encodeURIComponent(usuarioId)}`, { method: 'DELETE' });
-      } catch { /* A base de validação deve ser descartável. */ }
+      } catch {}
     }
     setAuthToken(null);
     queryClient.clear();
-    await rm(directory, { recursive: true, force: true });
+    await rm(file, { force: true });
+    await rmdir(directory);
   }
 });

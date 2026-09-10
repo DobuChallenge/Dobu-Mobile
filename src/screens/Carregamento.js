@@ -1,5 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -14,15 +12,8 @@ import { useAuth } from '../hooks/useAuth';
 import Button from '../components/Button';
 import { cores } from '../styles/tema';
 
-export default function Carregamento({ navigation }) {
-
-  const { user, restoring, restoreError, restore } = useAuth();
-
-  useEffect(() => {
-    if (restoring || restoreError) return;
-    const destino = user ? (user.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio') : 'Inicial';
-    navigation.replace(destino);
-  }, [navigation, user, restoring, restoreError]);
+export default function Carregamento() {
+  const { restoreError, restore } = useAuth();
 
   return (
     <SafeAreaView style={styles.tela}>
