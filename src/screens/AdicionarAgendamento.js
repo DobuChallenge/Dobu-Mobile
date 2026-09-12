@@ -12,15 +12,19 @@ import { ui } from '../styles/ui';
 export default function AdicionarAgendamento({ navigation, route }) {
   const id = route.params?.id;
   const editor = useAgendamentoEditor(id);
+  const form = useAgendamentoForm({ id, initial: editor.initial, pets: editor.pets, usuarios: editor.usuarios, petId: route.params?.petId });
+  const query = {
+    ...editor.query,
+    isPending: editor.query.isPending || (!editor.query.isError && !form.ready),
+  };
   return <Screen navigation={navigation} title={id ? 'Editar agendamento' : 'Novo agendamento'} subtitle="Organize o próximo atendimento">
-    <QueryState query={editor.query}>
-      <AgendamentoForm key={id || 'new'} navigation={navigation} {...editor} petId={route.params?.petId} />
+    <QueryState query={query}>
+      <AgendamentoForm navigation={navigation} editing={Boolean(id)} form={form} pets={editor.pets} />
     </QueryState>
   </Screen>;
 }
 
-function AgendamentoForm({ navigation, initial, pets, usuarios, petId }) {
-  const form = useAgendamentoForm({ initial, pets, usuarios, petId });
+function AgendamentoForm({ navigation, editing, form, pets }) {
   const statusOptions = [...new Set([...appointmentStatuses, form.draft.status])].filter(Boolean).map((value) => ({ value, label: value }));
   if (!pets.length) return <Card><Text style={ui.title}>Cadastre um animal primeiro</Text><Text style={ui.body}>O agendamento precisa estar vinculado a um animal.</Text><Button title="Cadastrar animal" onPress={() => navigation.navigate('CadastroPet')} /></Card>;
   if (!form.veterinarios.length) return <Card><Text style={ui.title}>Nenhum veterinário cadastrado</Text><Text style={ui.body}>Um profissional precisa criar uma conta de veterinário para receber agendamentos.</Text></Card>;
@@ -32,7 +36,7 @@ function AgendamentoForm({ navigation, initial, pets, usuarios, petId }) {
     <SelectField label="Status" value={form.draft.status} onChange={(value) => form.change('status', value)} options={statusOptions} disabled={form.pending} />
     {form.error ? <Text style={ui.error} accessibilityRole="alert">{form.error}</Text> : null}
     <View style={ui.actions}>
-      <Button title={form.pending ? 'Salvando…' : initial ? 'Salvar alterações' : 'Criar agendamento'} disabled={form.pending} onPress={async () => { if (await form.submit()) navigation.goBack(); }} />
+      <Button title={form.pending ? 'Salvando…' : editing ? 'Salvar alterações' : 'Criar agendamento'} disabled={form.pending} onPress={async () => { if (await form.submit()) navigation.goBack(); }} />
     </View>
   </Card>;
 }

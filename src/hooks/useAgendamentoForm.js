@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from './useAuth';
 import { useCatalogos, usePets } from './usePets';
 import { useAgendamento, useAgendamentoMutations } from './useAgendamentos';
 import { combineQueries } from '../services/queryState';
 import { agendamentoPayload, appointmentDraft } from '../utils/agendamentoValidation';
+import { appointmentFormKey, initializeAppointmentForm } from './appointmentFormState';
 
 export function useAgendamentoEditor(id) {
   const pets = usePets();
@@ -12,21 +13,36 @@ export function useAgendamentoEditor(id) {
   return { query: combineQueries(id ? [pets, catalogs, appointment] : [pets, catalogs]), pets: pets.data || [], usuarios: catalogs.data?.usuarios || [], initial: appointment.data };
 }
 
-export function useAgendamentoForm({ initial, petId, pets, usuarios }) {
+export function useAgendamentoForm({ id, initial, petId, pets, usuarios }) {
   const { user } = useAuth();
   const { salvar } = useAgendamentoMutations();
-  const [draft, setDraft] = useState(() => initial ? appointmentDraft(initial) : { ...appointmentDraft(), petId: petId || '', veterinarioId: user.tipoConta === 'veterinario' ? user.id : '' });
+  const key = appointmentFormKey(id, user.id);
+  const [formState, setFormState] = useState(() => initializeAppointmentForm(null, { id, initial, petId, user }));
   const [error, setError] = useState('');
   const lock = useRef(false);
-  const change = (name, value) => { setDraft((current) => ({ ...current, [name]: value })); setError(''); };
+
+  useEffect(() => {
+    setFormState((current) => initializeAppointmentForm(current, { id, initial, petId, user }));
+  }, [id, initial, petId, user.id, user.tipoConta]);
+
+  useEffect(() => { setError(''); }, [key]);
+
+  const ready = formState?.key === key;
+  const draft = ready ? formState.draft : appointmentDraft();
+  const change = (name, value) => {
+    setFormState((current) => current?.key === key
+      ? { ...current, draft: { ...current.draft, [name]: value } }
+      : current);
+    setError('');
+  };
   const submit = async () => {
-    if (lock.current) return null;
+    if (!ready || lock.current) return null;
     lock.current = true;
     setError('');
     try {
-      return await salvar.mutateAsync({ id: initial?.id, dados: agendamentoPayload(draft, pets, usuarios) });
+      return await salvar.mutateAsync({ id, dados: agendamentoPayload(draft, pets, usuarios) });
     } catch (failure) { setError(failure.message); return null; }
     finally { lock.current = false; }
   };
-  return { draft, change, submit, error, pending: salvar.isPending, veterinarios: usuarios.filter((item) => item.tipoUsuario === 'VETERINARIO'), isVeterinario: user.tipoConta === 'veterinario' };
+  return { draft, change, submit, error, ready, pending: salvar.isPending, veterinarios: usuarios.filter((item) => item.tipoUsuario === 'VETERINARIO'), isVeterinario: user.tipoConta === 'veterinario' };
 }
