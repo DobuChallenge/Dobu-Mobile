@@ -1,307 +1,449 @@
 # Dobu Mobile
 
-Dobu Mobile é um protótipo funcional desenvolvido em React Native com Expo. A proposta é ajudar responsáveis e profissionais veterinários a organizar informações importantes da rotina de cuidado dos animais.
+Projeto desenvolvido para a **Sprint 3 de Mobile Application Development**.
 
-O aplicativo reúne cadastro e login pela API, gerenciamento de pets, lembretes, agendamentos, guia de informações e uma simulação de monitoramento pela Dobu-Cam. A sessão usa Expo SecureStore; pets, agendamentos e monitoramento continuam armazenados localmente com AsyncStorage.
+O **Dobu** é um aplicativo mobile voltado à organização da rotina de cuidados de pets, permitindo que responsáveis e veterinários gerenciem animais, atendimentos, lembretes, vacinas e outras informações importantes em um único ambiente.
 
----
-
-# Objetivo do Projeto
-
-O objetivo do Dobu Mobile é centralizar dados importantes da vida do animal e apoiar o cuidado preventivo no dia a dia.
-
-Com o app, o usuário consegue:
-
-- cadastrar responsáveis e veterinários;
-- fazer login pela API;
-- cadastrar e visualizar animais;
-- organizar consultas, vacinas, retornos, exames e outros cuidados;
-- consultar lembretes e agendamentos;
-- acessar orientações de cuidado animal;
-- simular leituras da Dobu-Cam;
-- manter os dados salvos localmente no dispositivo.
-
-Também existe um fluxo para veterinários, com visualização de agenda, pacientes e informações úteis para atendimento.
+O aplicativo foi desenvolvido em **React Native com Expo** e integrado à **API REST Dobu desenvolvida em .NET**.
 
 ---
 
-# Sobre a Dobu-Cam
+## Objetivo do Projeto
 
-A Dobu-Cam representa uma proposta de monitoramento geral do ambiente do animal. Ela não pertence a um pet individual; funciona como um recurso do sistema para acompanhar presença, movimento e status simulado.
+O objetivo do Dobu Mobile é centralizar informações importantes sobre a saúde e a rotina dos animais, facilitando o acompanhamento por responsáveis e profissionais veterinários.
 
-Na tela da Dobu-Cam é possível:
-
-- simular detecção de presença;
-- conectar uma URL de dispositivo IoT;
-- exibir o status da leitura;
-- salvar leituras localmente com AsyncStorage.
+A aplicação conta com autenticação, gerenciamento de pets e agendamentos, consulta de informações veterinárias e recursos específicos para responsáveis e veterinários.
 
 ---
 
-# Tecnologias Utilizadas
+## Funcionalidades
 
-- React Native
-- Expo
-- React Navigation
-- AsyncStorage
-- Expo SecureStore
-- TanStack Query
-- Expo Image Picker
-- Expo File System
-- @expo/vector-icons
+### Autenticação e Navegação
 
----
+* Cadastro de responsável e veterinário;
+* Login integrado à API;
+* Sessão persistida com Expo SecureStore;
+* Logout;
+* Restauração automática da sessão;
+* Telas internas protegidas por autenticação;
+* Fluxos específicos para responsável e veterinário;
+* Navegação utilizando React Navigation.
 
-# Funcionalidades Implementadas
+### Gerenciamento de Pets
 
-## Navegação e Autenticação
+CRUD completo de pets integrado à API:
 
-- Tela de carregamento;
-- Tela inicial;
-- Cadastro de usuário;
-- Login e cadastro reais pela API;
-- Restauração da sessão e logout;
-- Fluxo para responsável;
-- Fluxo para veterinário;
-- Mais de cinco rotas navegáveis usando React Navigation.
+* Cadastro de pets;
+* Listagem de pets;
+* Consulta individual;
+* Atualização dos dados;
+* Exclusão;
+* Associação do animal a uma raça;
+* Perfil individual do animal.
 
-## Gerenciamento de Pets
+### Agendamentos
 
-- Cadastro de animais;
-- Prévia dinâmica dos dados enquanto o usuário digita;
-- Manipulação de estado com `useState`;
-- Lista de animais cadastrados;
-- Perfil individual do animal;
-- Exclusão de animal.
+CRUD completo de agendamentos integrado à API:
 
-## Rotina e Agendamentos
+* Cadastro;
+* Listagem;
+* Consulta;
+* Atualização;
+* Exclusão;
+* Associação com pets;
+* Data e horário;
+* Status do atendimento;
+* Veterinário responsável.
 
-- Calendário de agendamentos;
-- Cadastro de consulta, vacina, retorno, check-up, exame, vermífugo e banho/tosa;
-- Seleção de pet, médico, tipo, data, horário, clínica e prioridade;
-- Lembretes gerados a partir dos agendamentos;
-- Vínculo entre agendamentos, pets, responsáveis e veterinários.
+Os agendamentos também são utilizados para gerar lembretes de próximos atendimentos.
 
-## Guia de Informações
+### Guia de Raças
 
-- Conteúdos sobre cuidado animal;
-- Filtros para responsável, médico e urgência;
-- Busca por temas;
-- Orientações práticas sobre rotina, prevenção, comportamento, alimentação e sinais de alerta.
+O aplicativo permite consultar raças cadastradas na API, apresentando informações como:
 
-## Sistema de Pontuação
+* Espécie;
+* Porte;
+* Expectativa de vida;
+* Descrição;
+* Cuidados recomendados.
 
-O aplicativo possui uma lógica simples de pontuação para incentivar o cuidado contínuo.
+### Vacinas
 
-O usuário ganha pontos ao:
+A tela de informações permite consultar as vacinas cadastradas para cada pet, incluindo:
 
-- cadastrar novos animais;
-- criar agendamentos.
+* Nome da vacina;
+* Data de aplicação;
+* Data da próxima dose;
+* Pet relacionado.
 
-Cada usuário possui sua própria pontuação.
+### Caderno de Observações
 
-## Persistência Local
+Cada animal possui um espaço destinado ao registro de observações e informações importantes para acompanhamento de sua rotina.
 
-Os dados são persistidos com AsyncStorage:
+### Perfil do Usuário
 
-- pets;
-- agendamentos;
-- monitoramento;
-- pontos por usuário.
+O aplicativo possui telas específicas de perfil para os diferentes tipos de usuário, permitindo visualizar informações da conta e acessar funcionalidades relacionadas ao seu perfil.
 
-A sessão é persistida separadamente no SecureStore, sem senha. Ao reiniciar, o app restaura uma sessão não expirada e retorna ao fluxo do perfil. Os registros antigos de usuários simulados são removidos; não são usados como credenciais.
+### Painel do Veterinário
 
----
+Veterinários possuem um fluxo próprio no aplicativo, com acesso às informações necessárias para acompanhamento dos animais e atendimentos.
 
-# Conceitos Aplicados
+### Dobu-Cam
 
-- Navegação entre telas;
-- Manipulação de estado com `useState`;
-- Componentização;
-- Formulários controlados;
-- Persistência local com AsyncStorage;
-- Tratamento de erros em operações principais de cadastro, login, foto, agendamento e armazenamento;
-- Uso de bibliotecas do Expo;
-- Organização de fluxo mobile;
-- Dados mockados e simulações funcionais.
+A Dobu-Cam representa um recurso de monitoramento dentro do ecossistema Dobu, permitindo trabalhar com informações relacionadas ao acompanhamento do ambiente do animal.
 
 ---
 
-# Estrutura do Projeto
+## Tecnologias
 
-```bash
+* React Native 0.81;
+* Expo SDK 54;
+* JavaScript;
+* React 19;
+* React Navigation;
+* TanStack Query;
+* Expo SecureStore;
+* Expo Image Picker;
+* API REST em .NET.
+
+---
+
+## Arquitetura e Organização
+
+O projeto foi dividido em responsabilidades para separar interface, comunicação com a API, autenticação, armazenamento e regras das telas.
+
+```text
 src/
-  api/
-  hooks/
-  providers/
-  utils/
-  components/
-  screens/
-  storage/
-  styles/
-assets/
-App.js
-app.json
-index.js
-package.json
+  api/          chamadas HTTP
+  auth/         sessão e autenticação
+  components/   componentes reutilizáveis
+  hooks/        lógica de telas e formulários
+  navigation/   rotas e proteção de telas
+  providers/    Auth e TanStack Query
+  screens/      telas do aplicativo
+  services/     regras e configurações de queries
+  storage/      SecureStore
+  styles/       estilos
+  utils/        validações e formatação
+
+tests/          testes automatizados
 ```
 
 ---
 
-# Como Executar o Projeto
+# Como Executar
 
-## Instalar dependências
+Para executar a solução completa, utilize **dois terminais**:
 
-```bash
-npm install
+1. Um para a API .NET;
+2. Outro para o aplicativo mobile.
+
+## Pré-requisitos
+
+* Node.js 22.7 ou superior;
+* npm;
+* SDK .NET 9;
+* Expo Go compatível com Expo SDK 54;
+* Emulador Android ou celular Android conectado à mesma rede do computador.
+
+---
+
+## 1. Executar a API
+
+A API está disponível no repositório `Dobu-.NET` e não precisa estar dentro do repositório do aplicativo mobile.
+
+Caso ainda não tenha o projeto:
+
+```powershell
+cd C:\Users\yumizxs\Desktop
+
+git clone https://github.com/DobuChallenge/Dobu-.NET.git
 ```
 
-## Ambiente para a futura integração (Sprint 3)
+Entre no projeto:
 
-O TanStack Query está instalado e seu provider envolve a aplicação. A camada
-HTTP está disponível em `src/api`. Login e cadastro estão conectados ao backend;
-as telas de pets e agendamentos continuam usando dados locais.
+```powershell
+cd C:\Users\yumizxs\Desktop\Dobu-.NET
+```
 
-Copie `.env.example` para `.env.local` na raiz e, quando a API estiver disponível,
-preencha a URL base fornecida pela equipe, sem o sufixo `/api`:
+Configure o ambiente de desenvolvimento:
+
+```powershell
+$env:Database__Provider = 'Sqlite'
+
+$env:ConnectionStrings__DobuSqlite = "Data Source=$env:TEMP\dobu-teste-manual.db"
+
+$env:Jwt__Key = [guid]::NewGuid().ToString('N') + [guid]::NewGuid().ToString('N')
+```
+
+Inicie a API:
+
+```powershell
+dotnet run --project "DOBU/Dobu.Api/Dobu.Api.csproj" --no-launch-profile --urls http://0.0.0.0:5099
+```
+
+Mantenha esse terminal aberto.
+
+Para verificar se a API está funcionando, acesse:
+
+```text
+http://localhost:5099/swagger
+```
+
+> Caso exista uma pasta `Dobu-.NET` incompleta dentro do repositório mobile, ela pode ser ignorada. A execução do aplicativo utiliza o repositório da API separadamente.
+
+---
+
+## 2. Configurar o Aplicativo
+
+Abra outro terminal:
+
+```powershell
+cd C:\Users\yumizxs\Desktop\Dobu-Mobile
+
+npm.cmd ci
+```
+
+Crie o arquivo de configuração local caso ele ainda não exista:
+
+```powershell
+if (!(Test-Path .env.local)) { Copy-Item .env.example .env.local }
+```
+
+Depois, configure a URL da API no arquivo `.env.local`.
+
+### Emulador Android
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://10.0.2.2:5099
+```
+
+O endereço `10.0.2.2` permite que o emulador Android acesse o `localhost` do computador.
+
+### Celular Android
+
+Descubra o IPv4 do computador:
+
+```powershell
+ipconfig
+```
+
+Configure o `.env.local` utilizando esse endereço:
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://IP-DO-COMPUTADOR:5099
+```
+
+Exemplo:
+
+```dotenv
+EXPO_PUBLIC_API_URL=http://192.168.0.10:5099
+```
+
+> No celular físico, não utilize `localhost`, pois ele representa o próprio celular e não o computador onde a API está sendo executada.
+
+---
+
+## 3. Executar o Aplicativo
+
+Execute:
+
+```powershell
+npx.cmd expo start -c
+```
+
+### Emulador Android
+
+Com o Metro aberto, pressione:
+
+```text
+a
+```
+
+### Celular Android
+
+Abra o **Expo Go** e escaneie o QR Code apresentado no terminal.
+
+---
+
+# Primeiro Acesso
+
+Ao utilizar uma base de dados nova, inicialmente não existirão usuários, espécies, raças, pets ou vacinas.
+
+Siga esta ordem para preparar os dados:
+
+1. Crie uma conta de **responsável** pelo aplicativo;
+2. Crie uma conta de **veterinário** pelo aplicativo;
+3. No aplicativo, abra **Cadastrar animal** e use o botão **Preparar catálogo básico** caso ainda não existam espécies e raças;
+4. Cadastre um pet utilizando uma das raças disponíveis;
+5. Crie agendamentos pelo aplicativo;
+6. Para visualizar vacinas na tela de Informações, cadastre uma vacina utilizando `POST /api/vacinas`.
+
+Também é possível cadastrar espécies e raças manualmente pelo Swagger, caso queira usar outros dados na apresentação.
+
+---
+
+## Exemplo de Espécie
+
+```json
+{
+  "nome": "Canina",
+  "descricao": "Espécie dos cães domésticos."
+}
+```
+
+---
+
+## Exemplo de Raça
+
+Utilize no campo `especieId` o ID retornado ao cadastrar a espécie.
+
+```json
+{
+  "nome": "Sem raça definida",
+  "porte": "Médio",
+  "expectativaVida": 12,
+  "descricao": "Cadastro usado para teste do aplicativo.",
+  "cuidados": "Registrar orientações recebidas no atendimento.",
+  "especieId": "ID-DA-ESPECIE"
+}
+```
+
+---
+
+## Exemplo de Vacina
+
+Utilize no campo `petId` o ID do pet cadastrado.
+
+```json
+{
+  "nome": "V10",
+  "dataAplicacao": "2026-09-12T09:00:00",
+  "dataProximaDose": "2027-09-12T09:00:00",
+  "petId": "ID-DO-PET"
+}
+```
+
+---
+
+# Autenticação e Sessão
+
+A autenticação do aplicativo é realizada pela API .NET.
+
+Após login ou cadastro, o aplicativo recebe os dados necessários para estabelecer a sessão do usuário.
+
+A sessão é armazenada utilizando **Expo SecureStore**, sem armazenar a senha do usuário.
+
+Ao reiniciar o aplicativo, uma sessão válida pode ser restaurada automaticamente.
+
+Caso o JWT esteja expirado, será necessário realizar um novo login.
+
+O logout:
+
+* remove a sessão armazenada;
+* remove o token utilizado nas chamadas HTTP;
+* limpa os dados relacionados à sessão em memória;
+* retorna o usuário ao fluxo público da aplicação.
+
+---
+
+# Integração com a API
+
+A configuração da API é centralizada no projeto e utiliza a variável:
 
 ```dotenv
 EXPO_PUBLIC_API_URL=
 ```
 
-`src/api/config.js` centraliza essa configuração. A URL precisa estar configurada
-e acessível pelo dispositivo para realizar login ou cadastro. Não há login local
-quando a API está indisponível. Em celular físico, `localhost` aponta para o próprio
-celular: use o endereço acessível do servidor na rede.
-Nunca coloque tokens, senhas ou secrets em variáveis `EXPO_PUBLIC_`, pois seus
-valores ficam visíveis no aplicativo. `.env.local` é ignorado pelo Git.
-Após alterar a variável, recarregue completamente o app.
+O aplicativo possui clientes responsáveis pela comunicação com os endpoints da API.
 
-## Camada HTTP
+Entre as integrações utilizadas estão:
 
-`authApi` (`src/api/auth.js`) expõe `login` e `cadastrar` conforme `AuthController`
-e `AuthDtos` do backend. As respostas contêm `token`, `usuarioId`, `nome`, `email`
-e `tipoUsuario`. Essas funções não iniciam uma sessão automaticamente.
+* autenticação;
+* usuários;
+* pets;
+* agendamentos;
+* espécies;
+* raças;
+* vacinas.
 
-`petsApi` e `agendamentosApi` expõem listagem, consulta por ID, criação,
-atualização, exclusão e os filtros definidos nos respectivos controllers.
-Os corpos enviados contêm apenas os campos dos contratos `PetRequest` e
-`AgendamentoRequest`. As respostas JSON são devolvidas sem adaptação aos modelos
-locais; exclusões com status 204 retornam `undefined`.
+As requisições protegidas utilizam o token JWT da sessão.
 
-O controlador de sessão configura o Bearer no cliente HTTP após login, cadastro
-ou restauração. Login e cadastro não enviam esse header. O backend não fornece
-refresh token; uma sessão expirada exige novo login.
+> Nunca coloque senhas, tokens privados ou outros secrets diretamente em variáveis `EXPO_PUBLIC_`, pois esses valores podem ficar disponíveis no aplicativo.
 
-## Autenticação e sessão
+---
 
-`AuthProvider` expõe `user`, `isAuthenticated`, `restoring`, `restoreError`,
-`restore` e `logout` por `useAuth`. `useLogin` e `useRegister` usam mutations sem
-retry automático. As telas validam campos antes do envio e apresentam mensagens
-de carregamento, sucesso e erro. O backend continua sendo a autoridade de validação.
+# Testes
 
-O SecureStore persiste apenas `token`, `usuarioId`, `nome`, `email` e `tipoUsuario`.
-Senhas não são persistidas ou registradas no console. A restauração verifica a
-expiração do JWT localmente; a API valida sua assinatura nas chamadas protegidas.
-O logout remove a sessão segura, limpa o token em memória e cancela/limpa o cache.
-`src/navigation/routeConfig.js` declara os grupos de rotas. Durante a restauração
-(ou erro ao restaurar), somente `Carregamento` fica disponível. Sem sessão, o
-navegador registra `Inicial`, `Login` e `Cadastro`. Com sessão, registra apenas
-as telas internas e abre `Inicio` ou `PerfilVeterinario`, conforme o perfil.
-A mudança de sessão remonta o stack e remove o histórico anterior. Login,
-cadastro e logout não fazem redirecionamentos manuais para trocar de grupo.
-As rotas internas exigem sessão; permissões específicas de negócio dependem
-do backend e não são substituídas por esse controle de navegação.
+## Testes Automatizados
 
-O cadastro solicita os quatro campos aceitos pela API: nome, email, senha e tipo
-de usuário. Foto, CPF e CRMV não fazem parte desse contrato. A exclusão de conta
-pela interface ainda não está integrada. A antiga lista local de usuários foi
-removida; a seleção de veterinários consulta `/api/usuarios` sem persistir contas.
+Execute:
 
-Para verificar no Android/iOS: configure a API, cadastre uma conta, saia, teste
-uma senha incorreta, entre com a senha correta, feche e reabra o app e confirme
-o perfil restaurado. Saia novamente e reabra para confirmar que a sessão foi removida.
-
-O teste `node --test tests/auth.integration.test.js` usa `EXPO_PUBLIC_API_URL`
-do ambiente, cadastra uma conta temporária com credenciais aleatórias e a remove
-ao terminar. Execute somente contra uma base de desenvolvimento descartável.
-Ele valida o cliente e o ciclo de sessão contra o backend real; o armazenamento
-nesse teste é um arquivo temporário. A persistência nativa do SecureStore requer
-validação em dispositivo ou emulador. Não há credenciais de demonstração no app.
-
-O cliente centraliza JSON, headers e timeout de 15 segundos. Uma chamada sem URL
-válida produz `ApiError`; os erros expõem `message`, `code` e `status` seguros,
-sem incluir corpos de erro do servidor ou credenciais.
-
-Execute `npm test` com Node.js 22.7 ou superior para validar a camada sem servidor.
-Os testes substituem o transporte de rede somente durante sua execução.
-A leitura IoT usa `src/api/dobuCam.js` e o mesmo transporte HTTP centralizado.
-O endereço do dispositivo continua sendo informado na tela, separado da URL base
-do backend configurada no ambiente. Requisições ao dispositivo nunca enviam o
-token de autenticação do backend.
-
-## Iniciar o projeto
-
-```bash
-npx expo start
-```
-
-## Executar no Android
-
-Com o Metro aberto, pressione:
-
-```bash
-a
-```
-
-Também é possível abrir pelo Expo Go usando o QR Code exibido no terminal.
-
-Para limpar o cache durante testes:
-
-```bash
-npx expo start -c
+```powershell
+npm.cmd test
 ```
 
 ---
 
-# Teste do AsyncStorage
+## Testes de Integração
 
-Para validar a persistência local:
+Com a API disponível em:
 
-1. Crie um usuário.
-2. Cadastre um animal.
-3. Crie um agendamento.
-4. Confira os pontos no perfil ou na tela inicial.
-5. Recarregue ou reinicie o aplicativo.
-6. Abra novamente e confirme se usuário, animal, agendamento e pontos continuam salvos.
+```text
+http://127.0.0.1:5099
+```
 
-## Chaves Utilizadas
+execute:
 
-```js
-@dobu:pets
-@dobu:agendamentos
-@dobu:monitoramento
-@dobu:pontos
+```powershell
+$env:EXPO_PUBLIC_API_URL = 'http://127.0.0.1:5099'
+
+npm.cmd run test:integration
+
+Remove-Item Env:EXPO_PUBLIC_API_URL
+```
+
+Os testes de integração utilizam a API real e devem ser executados somente em uma base de desenvolvimento destinada a testes.
+
+---
+
+## Verificar Bundle Android
+
+Execute:
+
+```powershell
+npm.cmd run export:android
 ```
 
 ---
 
-## Links:
+# Sobre esta Versão
 
-- Youtube: https://youtu.be/Z82Qn_hXZEY?si=1N98I5WYqMi_j_AL
-- Protótipo figma: https://www.figma.com/design/mOXmQd2t8nKM3tjBE9g5Dn/Challenge?node-id=0-1&t=0iOFcpAzaf11TImb-1
-- Repositório: https://github.com/DobuChallenge/Dobu-Mobile
+Nesta Sprint 3, os dois CRUDs completos implementados para atender aos requisitos da disciplina são:
+
+* **Pets**
+* **Agendamentos**
+
+Ambos utilizam integração com a API.
+
+A tela **Informações** consulta dados reais de raças e vacinas disponíveis na API e também oferece um caderno de observações por animal.
+
+As fotos utilizadas nos cadastros de usuário e pet são recursos visuais locais do aplicativo. A versão atual da API não realiza persistência dessas imagens.
+
+---
+
+# Links
+
+* **Vídeo da Sprint 3:** 
+* **Protótipo no Figma:** https://www.figma.com/design/mOXmQd2t8nKM3tjBE9g5Dn/Challenge
+* **Repositório:** https://github.com/DobuChallenge/Dobu-Mobile
 
 ---
 
 # Integrantes
 
-- Amandha Yumi Toyota Artulino - RM: 563549
-- Giovanna Bardella Gomes - RM: 561439
-- Erick Takeshi Nakajune - RM: 566059
+* **Amandha Yumi Toyota Artulino** — RM 563549
+* **Giovanna Bardella Gomes** — RM 561439
+* **Erick Takeshi Nakajune** — RM 566059
 
 ---
-
-# Observações
-
-Este projeto foi desenvolvido para fins acadêmicos na disciplina de Mobile Application Development. Os dados são simulados e armazenados localmente para demonstrar o funcionamento do protótipo.
