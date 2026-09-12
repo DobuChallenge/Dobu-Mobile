@@ -8,20 +8,41 @@ import Screen from '../components/Screen';
 import SelectField from '../components/SelectField';
 import TextInput from '../components/TextInput';
 import { useInformacaoForm, useInformacoesCaderno } from '../hooks/useInformacoes';
-import { ui } from '../styles/ui';
+import { formatarDataVacina, resumirRaca } from '../services/informacoes';
 import { cores } from '../styles/tema';
+import { ui } from '../styles/ui';
 
 export default function Informacoes({ navigation, route }) {
   const caderno = useInformacoesCaderno(route?.params?.petId);
   const form = useInformacaoForm(caderno.petId, caderno.mutations.criar);
 
   return (
-    <Screen navigation={navigation} title="Caderno de cuidados" subtitle="Registros organizados por animal" active="home">
+    <Screen navigation={navigation} title="Informações" subtitle="Pesquise raças, cuidados e vacinas" active="home">
+      <Text style={styles.sectionTitle}>Pesquisar raça</Text>
+      <SearchBox
+        label="Buscar raça"
+        value={caderno.pesquisaRaca}
+        onChangeText={caderno.setPesquisaRaca}
+        placeholder="Busque por raça, espécie, porte ou cuidado"
+      />
+
+      <QueryState
+        query={caderno.catalogosQuery}
+        empty={Boolean(caderno.catalogosQuery.data && caderno.racasFiltradas.length === 0)}
+        emptyTitle="Nenhuma raça encontrada"
+        emptyMessage="Crie a lista inicial de espécies e raças no cadastro de animal ou tente outra busca."
+      >
+        {caderno.racasFiltradas.slice(0, 8).map((raca) => (
+          <BreedCard key={raca.id} raca={raca} />
+        ))}
+      </QueryState>
+
+      <Text style={styles.sectionTitle}>Vacinas</Text>
       <QueryState
         query={caderno.petsQuery}
         empty={Boolean(caderno.petsQuery.data && caderno.petsQuery.data.length === 0)}
         emptyTitle="Nenhum animal disponível"
-        emptyMessage="Cadastre ou vincule um animal para criar seu caderno de cuidados."
+        emptyMessage="Cadastre um animal para consultar vacinas vinculadas a ele."
       >
         <SelectField
           label="Animal"
@@ -32,105 +53,86 @@ export default function Informacoes({ navigation, route }) {
           disabled={caderno.mutations.criar.isPending || caderno.mutations.excluir.isPending}
         />
 
-        <View style={styles.acoesTopo}>
-          <Button
-            title={`Agendar para ${caderno.pet?.nome || 'o animal'}`}
-            icon="calendar-outline"
-            cor="cinzaEscuro"
-            disabled={!caderno.petId}
-            onPress={() => navigation.navigate('AdicionarAgendamento', { petId: caderno.petId })}
-            style={styles.acaoTopo}
-          />
-        </View>
+        <SearchBox
+          label="Buscar vacina"
+          value={caderno.pesquisaVacina}
+          onChangeText={caderno.setPesquisaVacina}
+          placeholder="Busque por nome da vacina ou animal"
+        />
 
-        <Text style={styles.secaoTitulo}>Cuidados da raça</Text>
-        {caderno.catalogosQuery.isPending ? (
-          <Card style={styles.cardEstado}>
-            <ActivityIndicator color={cores.principalEscuro} />
-            <Text style={styles.estadoTexto}>Consultando os dados da raça…</Text>
-          </Card>
-        ) : caderno.catalogosQuery.isError ? (
-          <Card style={styles.cardEstado}>
-            <Ionicons name="cloud-offline-outline" size={26} color={cores.textoClaro} />
-            <Text style={styles.estadoTexto}>Os cuidados da raça não puderam ser consultados agora.</Text>
-            <Button
-              title="Tentar novamente"
-              cor="branco"
-              disabled={caderno.catalogosQuery.isFetching}
-              onPress={() => caderno.catalogosQuery.refetch()}
-              style={styles.botaoCompacto}
-            />
-          </Card>
-        ) : caderno.cuidado ? (
-          <Card style={styles.cuidadoCard}>
-            <View style={styles.cardCabecalho}>
-              <View style={styles.iconeCuidado}>
-                <Ionicons name="paw-outline" size={22} color={cores.principalEscuro} />
+        <QueryState
+          query={caderno.vacinasQuery}
+          empty={Boolean(caderno.vacinasQuery.data && caderno.vacinasFiltradas.length === 0)}
+          emptyTitle="Nenhuma vacina encontrada"
+          emptyMessage="As vacinas cadastradas para seus animais aparecerão aqui."
+        >
+          {caderno.vacinasFiltradas.map((vacina) => (
+            <Card key={vacina.id} style={styles.vaccineCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.iconBadge}>
+                  <Ionicons name="medkit-outline" size={22} color={cores.principalEscuro} />
+                </View>
+                <View style={styles.cardTitleArea}>
+                  <Text style={styles.cardKicker}>Vacina</Text>
+                  <Text style={styles.cardTitle}>{vacina.nome}</Text>
+                </View>
               </View>
-              <View style={styles.cardTituloArea}>
-                <Text style={styles.cardEtiqueta}>Sobre a raça</Text>
-                <Text style={styles.cardTitulo}>{caderno.cuidado.nome}</Text>
-              </View>
-            </View>
-            <Text style={styles.cardDescricao}>{caderno.cuidado.texto}</Text>
-          </Card>
-        ) : (
-          <Card style={styles.cardEstado}>
-            <Ionicons name="information-circle-outline" size={26} color={cores.textoClaro} />
-            <Text style={styles.estadoTexto}>Esta raça ainda não possui cuidados cadastrados.</Text>
-          </Card>
-        )}
+              <InfoRow label="Animal" value={vacina.petNome} />
+              <InfoRow label="Aplicação" value={formatarDataVacina(vacina.dataAplicacao)} />
+              <InfoRow label="Próxima dose" value={formatarDataVacina(vacina.dataProximaDose)} />
+            </Card>
+          ))}
+        </QueryState>
+      </QueryState>
 
-        <View style={styles.listaCabecalho}>
-          <View>
-            <Text style={styles.secaoTituloSemMargem}>Registros de {caderno.pet?.nome || 'animal'}</Text>
-            {caderno.informacoesQuery.isSuccess ? (
-              <Text style={styles.contador}>{caderno.informacoes.length} registro(s) do usuário</Text>
-            ) : null}
-          </View>
-        </View>
+      <View style={styles.cadernoHeader}>
+        <Text style={styles.sectionTitleNoMargin}>Caderno do animal</Text>
+        <Button
+          title="Agendar"
+          icon="calendar-outline"
+          cor="branco"
+          disabled={!caderno.petId}
+          onPress={() => navigation.navigate('AdicionarAgendamento', { petId: caderno.petId })}
+          style={styles.smallButton}
+        />
+      </View>
 
-        <View style={styles.busca}>
-          <Ionicons name="search-outline" size={21} color={cores.textoClaro} />
-          <NativeTextInput
-            accessibilityLabel="Buscar nos registros"
-            value={caderno.pesquisa}
-            onChangeText={caderno.setPesquisa}
-            placeholder="Buscar por título ou descrição"
-            placeholderTextColor={cores.textoClaro}
-            style={styles.buscaInput}
-          />
-        </View>
+      <QueryState
+        query={caderno.petsQuery}
+        empty={Boolean(caderno.petsQuery.data && caderno.petsQuery.data.length === 0)}
+        emptyTitle="Nenhum animal disponível"
+        emptyMessage="Cadastre ou vincule um animal para criar registros."
+      >
+        <Text style={styles.petContext}>Registros de {caderno.pet?.nome || 'animal selecionado'}</Text>
+        <SearchBox
+          label="Buscar no caderno"
+          value={caderno.pesquisa}
+          onChangeText={caderno.setPesquisa}
+          placeholder="Buscar por título ou descrição"
+        />
 
         <QueryState
           query={caderno.informacoesQuery}
           empty={Boolean(caderno.informacoesQuery.data && caderno.informacoes.length === 0)}
           emptyTitle="Nenhum registro neste caderno"
-          emptyMessage="Use o formulário abaixo para guardar a primeira observação deste animal."
+          emptyMessage="Use o formulário abaixo para guardar uma observação."
         >
           {caderno.informacoesFiltradas.length === 0 ? (
-            <Card style={styles.cardEstado}>
-              <Ionicons name="search-outline" size={26} color={cores.textoClaro} />
-              <Text style={styles.estadoTexto}>Nenhum registro corresponde à busca.</Text>
-            </Card>
+            <StateCard icon="search-outline" text="Nenhum registro corresponde à busca." />
           ) : caderno.informacoesFiltradas.map((informacao) => (
-            <Card key={informacao.id} style={styles.notaCard}>
-              <View style={styles.notaTopo}>
-                <View style={styles.notaTituloArea}>
-                  <Text style={styles.registroEtiqueta}>Registro do usuário</Text>
-                  <Text style={styles.notaTitulo}>{informacao.titulo}</Text>
+            <Card key={informacao.id} style={styles.noteCard}>
+              <View style={styles.noteTop}>
+                <View style={styles.noteTitleArea}>
+                  <Text style={styles.cardKicker}>Registro do usuário</Text>
+                  <Text style={styles.cardTitle}>{informacao.titulo}</Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={
-                    caderno.mutations.excluir.isPending && caderno.mutations.excluir.variables?.id === informacao.id
-                      ? `Excluindo ${informacao.titulo || 'registro'}`
-                      : `Excluir ${informacao.titulo || 'registro'}`
-                  }
+                  accessibilityLabel={`Excluir ${informacao.titulo || 'registro'}`}
                   accessibilityState={{ disabled: caderno.mutations.excluir.isPending }}
                   disabled={caderno.mutations.excluir.isPending}
                   onPress={() => caderno.confirmarExclusao(informacao)}
-                  style={({ pressed }) => [styles.excluir, pressed && styles.pressionado]}
+                  style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
                 >
                   {caderno.mutations.excluir.isPending && caderno.mutations.excluir.variables?.id === informacao.id ? (
                     <ActivityIndicator size="small" color={cores.vermelho} />
@@ -139,7 +141,7 @@ export default function Informacoes({ navigation, route }) {
                   )}
                 </Pressable>
               </View>
-              <Text style={styles.notaDescricao}>{informacao.descricao}</Text>
+              <Text style={styles.noteText}>{informacao.descricao}</Text>
             </Card>
           ))}
         </QueryState>
@@ -150,35 +152,24 @@ export default function Informacoes({ navigation, route }) {
           </Text>
         ) : null}
 
-        <Text style={styles.secaoTitulo}>Adicionar registro do usuário</Text>
         <Card style={styles.formCard}>
-          <Text style={styles.formAjuda}>
-            Anote rotinas e observações que você deseja guardar sobre {caderno.pet?.nome || 'este animal'}.
-          </Text>
-          <TextInput label="Título" value={form.titulo} onChangeText={form.setTitulo} placeholder="Ex.: Rotina de alimentação" editable={!form.isSubmitting} />
+          <Text style={styles.formHelp}>Guarde observações rápidas sobre {caderno.pet?.nome || 'este animal'}.</Text>
+          <TextInput label="Título" value={form.titulo} onChangeText={form.setTitulo} placeholder="Ex.: Alimentação" editable={!form.isSubmitting} />
           {form.erros.titulo ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.titulo}</Text> : null}
           <TextInput
             label="Descrição"
             value={form.descricao}
             onChangeText={form.setDescricao}
-            placeholder="Escreva a observação que deseja registrar"
+            placeholder="Escreva a observação"
             multiline
             editable={!form.isSubmitting}
           />
           {form.erros.descricao ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.descricao}</Text> : null}
           {form.erros.petId ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.petId}</Text> : null}
           {form.error ? <Text accessibilityRole="alert" style={ui.error}>{form.error}</Text> : null}
-          {form.success ? (
-            <Text accessibilityLiveRegion="polite" style={styles.success}>{form.success}</Text>
-          ) : null}
-          {form.isSubmitting ? (
-            <View accessibilityLiveRegion="polite" style={styles.statusLinha}>
-              <ActivityIndicator size="small" color={cores.principalEscuro} />
-              <Text style={styles.statusTexto}>Salvando registro…</Text>
-            </View>
-          ) : null}
+          {form.success ? <Text accessibilityLiveRegion="polite" style={styles.success}>{form.success}</Text> : null}
           <Button
-            title={form.isSubmitting ? 'Salvando…' : 'Adicionar ao caderno'}
+            title={form.isSubmitting ? 'Salvando...' : 'Adicionar registro'}
             icon={form.isSubmitting ? undefined : 'add-circle-outline'}
             disabled={form.isSubmitting || !caderno.petId}
             onPress={form.salvar}
@@ -189,36 +180,103 @@ export default function Informacoes({ navigation, route }) {
   );
 }
 
+function BreedCard({ raca }) {
+  const details = resumirRaca(raca);
+  const description = String(raca.descricao || '').trim();
+  const care = String(raca.cuidados || '').trim();
+
+  return (
+    <Card style={styles.breedCard}>
+      <View style={styles.cardHeader}>
+        <View style={styles.iconBadge}>
+          <Ionicons name="paw-outline" size={22} color={cores.principalEscuro} />
+        </View>
+        <View style={styles.cardTitleArea}>
+          <Text style={styles.cardKicker}>Raça</Text>
+          <Text style={styles.cardTitle}>{raca.nome}</Text>
+        </View>
+      </View>
+      {details.map((item) => <InfoRow key={item.label} label={item.label} value={item.value} />)}
+      {description ? <Text style={styles.description}>{description}</Text> : null}
+      {care ? (
+        <View style={styles.careBox}>
+          <Text style={styles.careTitle}>Cuidados cadastrados</Text>
+          <Text style={styles.careText}>{care}</Text>
+        </View>
+      ) : null}
+    </Card>
+  );
+}
+
+function SearchBox({ label, value, onChangeText, placeholder }) {
+  return (
+    <View style={styles.searchGroup}>
+      <Text style={ui.label}>{label}</Text>
+      <View style={styles.searchBox}>
+        <Ionicons name="search-outline" size={21} color={cores.textoClaro} />
+        <NativeTextInput
+          accessibilityLabel={label}
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={cores.textoClaro}
+          style={styles.searchInput}
+        />
+      </View>
+    </View>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+function StateCard({ icon, text }) {
+  return (
+    <Card style={styles.stateCard}>
+      <Ionicons name={icon} size={26} color={cores.textoClaro} />
+      <Text style={styles.stateText}>{text}</Text>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  acoesTopo: { marginBottom: 22 },
-  acaoTopo: { width: '100%' },
-  secaoTitulo: { color: cores.marrom, fontSize: 19, fontWeight: '900', marginBottom: 10, marginTop: 4 },
-  secaoTituloSemMargem: { color: cores.marrom, fontSize: 19, fontWeight: '900' },
-  cuidadoCard: { marginBottom: 22 },
-  cardCabecalho: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  iconeCuidado: { width: 42, height: 42, borderRadius: 21, backgroundColor: cores.fundo, alignItems: 'center', justifyContent: 'center', marginRight: 11 },
-  cardTituloArea: { flex: 1 },
-  cardEtiqueta: { color: cores.principalEscuro, fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
-  cardTitulo: { color: cores.marrom, fontSize: 18, fontWeight: '900', marginTop: 2 },
-  cardDescricao: { color: cores.texto, fontSize: 16, lineHeight: 24 },
-  cardEstado: { alignItems: 'center', marginBottom: 22, paddingVertical: 22 },
-  estadoTexto: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 8 },
-  botaoCompacto: { alignSelf: 'stretch', marginTop: 10 },
+  sectionTitle: { color: cores.marrom, fontSize: 19, fontWeight: '900', marginBottom: 10, marginTop: 6 },
+  sectionTitleNoMargin: { color: cores.marrom, fontSize: 19, fontWeight: '900' },
+  searchGroup: { marginBottom: 14 },
+  searchBox: { minHeight: 52, backgroundColor: cores.branco, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14 },
+  searchInput: { flex: 1, color: cores.texto, fontSize: 16, marginLeft: 8 },
+  breedCard: { marginBottom: 12 },
+  vaccineCard: { marginBottom: 12 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  iconBadge: { width: 42, height: 42, borderRadius: 21, backgroundColor: cores.fundo, alignItems: 'center', justifyContent: 'center', marginRight: 11 },
+  cardTitleArea: { flex: 1 },
+  cardKicker: { color: cores.principalEscuro, fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
+  cardTitle: { color: cores.marrom, fontSize: 18, fontWeight: '900', marginTop: 2 },
+  infoRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 5 },
+  infoLabel: { color: cores.textoClaro, fontWeight: '800', flex: 1 },
+  infoValue: { color: cores.texto, fontWeight: '800', flex: 1.2, textAlign: 'right' },
+  description: { color: cores.texto, fontSize: 15, lineHeight: 22, marginTop: 10 },
+  careBox: { backgroundColor: cores.fundoClaro, borderRadius: 8, padding: 12, marginTop: 12 },
+  careTitle: { color: cores.marrom, fontWeight: '900', marginBottom: 6 },
+  careText: { color: cores.texto, fontSize: 15, lineHeight: 22 },
+  cadernoHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 12, marginBottom: 10 },
+  smallButton: { minHeight: 44, paddingHorizontal: 16 },
+  petContext: { color: cores.textoClaro, fontWeight: '800', marginBottom: 10 },
+  noteCard: { marginBottom: 12 },
+  noteTop: { flexDirection: 'row', alignItems: 'flex-start' },
+  noteTitleArea: { flex: 1, paddingRight: 8 },
+  noteText: { color: cores.texto, fontSize: 16, lineHeight: 24, marginTop: 10 },
+  deleteButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF1F1', borderWidth: 1, borderColor: '#F6C7C7', alignItems: 'center', justifyContent: 'center' },
+  pressed: { opacity: 0.72 },
   formCard: { marginBottom: 24 },
-  formAjuda: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, marginBottom: 18 },
-  listaCabecalho: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 },
-  contador: { color: cores.textoClaro, fontSize: 13, fontWeight: '700', marginTop: 3 },
+  formHelp: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, marginBottom: 18 },
   success: { color: '#2E6B32', fontSize: 15, fontWeight: '800', lineHeight: 22, marginBottom: 14 },
-  statusLinha: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  statusTexto: { color: cores.textoClaro, fontSize: 15, fontWeight: '800', marginLeft: 8 },
-  busca: { minHeight: 52, backgroundColor: cores.branco, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 14 },
-  buscaInput: { flex: 1, color: cores.texto, fontSize: 16, marginLeft: 8 },
-  notaCard: { marginBottom: 12 },
-  notaTopo: { flexDirection: 'row', alignItems: 'flex-start' },
-  notaTituloArea: { flex: 1, paddingRight: 8 },
-  registroEtiqueta: { alignSelf: 'flex-start', color: cores.texto, backgroundColor: cores.amareloClaro, borderRadius: 8, overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 5, fontSize: 12, fontWeight: '800', marginBottom: 8 },
-  notaTitulo: { color: cores.marrom, fontSize: 18, fontWeight: '900' },
-  notaDescricao: { color: cores.texto, fontSize: 16, lineHeight: 24, marginTop: 10 },
-  excluir: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF1F1', borderWidth: 1, borderColor: '#F6C7C7', alignItems: 'center', justifyContent: 'center' },
-  pressionado: { opacity: 0.72 },
+  stateCard: { alignItems: 'center', marginBottom: 22, paddingVertical: 22 },
+  stateText: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 8 },
 });
