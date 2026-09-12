@@ -155,7 +155,7 @@ A API está disponível no repositório `Dobu-.NET` e não precisa estar dentro 
 Caso ainda não tenha o projeto:
 
 ```powershell
-cd C:\Users\yumizxs\Desktop
+cd caminho\para\sua\pasta
 
 git clone https://github.com/DobuChallenge/Dobu-.NET.git
 ```
@@ -163,7 +163,7 @@ git clone https://github.com/DobuChallenge/Dobu-.NET.git
 Entre no projeto:
 
 ```powershell
-cd C:\Users\yumizxs\Desktop\Dobu-.NET
+cd caminho\para\sua\pasta\Dobu-.NET
 ```
 
 Configure o ambiente de desenvolvimento:
@@ -199,7 +199,7 @@ http://localhost:5099/swagger
 Abra outro terminal:
 
 ```powershell
-cd C:\Users\yumizxs\Desktop\Dobu-Mobile
+cd caminho\para\sua\pasta\Dobu-Mobile
 
 npm.cmd ci
 ```
