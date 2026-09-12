@@ -8,6 +8,7 @@ import Cadastro from '../screens/Cadastro';
 import CadastroPet from '../screens/CadastroPet';
 import Carregamento from '../screens/Carregamento';
 import DobuCam from '../screens/DobuCam';
+import EditarPerfil from '../screens/EditarPerfil';
 import Inicio from '../screens/Inicio';
 import Inicial from '../screens/Inicial';
 import Informacoes from '../screens/Informacoes';
@@ -21,7 +22,7 @@ import PerfilUsuario from '../screens/PerfilUsuario';
 const Stack = createNativeStackNavigator();
 const screens = {
   Carregamento, Inicial, Login, Cadastro,
-  Inicio, PerfilVeterinario, PerfilUsuario, CadastroPet, DobuCam,
+  Inicio, PerfilVeterinario, PerfilUsuario, EditarPerfil, CadastroPet, DobuCam,
   ListaPets, PerfilPet, Lembretes, Informacoes, Agendamentos, AdicionarAgendamento,
 };
 

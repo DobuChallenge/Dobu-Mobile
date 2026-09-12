@@ -17,7 +17,7 @@ function normalizeSession(value) {
   return { token: value.token, usuarioId: value.usuarioId, nome: value.nome, email: value.email, tipoUsuario: value.tipoUsuario };
 }
 
-export function createSessionController({ storage, api, queryClient, setToken }) {
+export function createSessionController({ storage, api, queryClient, setToken, profileExtrasStorage = { save: async () => {} } }) {
   let user = null;
   let generation = 0;
   let writes = Promise.resolve();
@@ -35,9 +35,15 @@ export function createSessionController({ storage, api, queryClient, setToken })
     try { return await operation(); }
     catch { throw new ApiError('Não foi possível acessar o armazenamento seguro. Tente novamente.', 'SESSION_STORAGE_ERROR'); }
   };
-  const activate = (session) => {
+  const activate = (session, profileExtras) => {
     setToken(session.token);
-    publish({ id: session.usuarioId, nome: session.nome, email: session.email, tipoConta: session.tipoUsuario.toLowerCase() });
+    publish({
+      id: session.usuarioId,
+      nome: session.nome,
+      email: session.email,
+      tipoConta: session.tipoUsuario.toLowerCase(),
+      ...(profileExtras ? { profileExtras } : {}),
+    });
     return user;
   };
   const authenticate = async (operation, credentials) => {
@@ -46,6 +52,14 @@ export function createSessionController({ storage, api, queryClient, setToken })
     return serialized(async () => {
       if (attempt !== generation) throw new ApiError('A autenticação foi cancelada.', 'SESSION_CANCELLED');
       await persist(() => storage.write(session));
+      let profileExtras = null;
+      if (credentials?.profileExtras) {
+        profileExtras = { ...credentials.profileExtras, tipoConta: session.tipoUsuario.toLowerCase() };
+        await profileExtrasStorage.save(
+          { id: session.usuarioId, email: session.email },
+          profileExtras,
+        );
+      }
       if (attempt !== generation) {
         await persist(() => storage.remove());
         throw new ApiError('A autenticação foi cancelada.', 'SESSION_CANCELLED');
@@ -53,7 +67,7 @@ export function createSessionController({ storage, api, queryClient, setToken })
       await queryClient.cancelQueries();
       queryClient.clear();
       if (attempt !== generation) throw new ApiError('A autenticação foi cancelada.', 'SESSION_CANCELLED');
-      return activate(session);
+      return activate(session, profileExtras);
     });
   };
 
@@ -89,5 +103,25 @@ export function createSessionController({ storage, api, queryClient, setToken })
         await persist(() => storage.remove());
       });
     },
+    updateUser: (changes) => serialized(async () => {
+      const saved = await persist(() => storage.read());
+      if (!saved || !user) return user;
+      const nextSession = {
+        ...saved,
+        nome: changes.nome || saved.nome,
+        email: changes.email || saved.email,
+        tipoUsuario: changes.tipoUsuario || saved.tipoUsuario,
+      };
+      await persist(() => storage.write(nextSession));
+      const nextProfileExtras = changes.profileExtras || user.profileExtras;
+      publish({
+        id: nextSession.usuarioId,
+        nome: nextSession.nome,
+        email: nextSession.email,
+        tipoConta: nextSession.tipoUsuario.toLowerCase(),
+        ...(nextProfileExtras ? { profileExtras: nextProfileExtras } : {}),
+      });
+      return user;
+    }),
   };
 }

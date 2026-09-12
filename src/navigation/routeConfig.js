@@ -3,6 +3,7 @@ const protectedRoutes = [
   'Inicio',
   'PerfilVeterinario',
   'PerfilUsuario',
+  'EditarPerfil',
   'CadastroPet',
   'DobuCam',
   'ListaPets',

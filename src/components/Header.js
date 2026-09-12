@@ -1,14 +1,33 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useAuth } from '../hooks/useAuth';
 import { cores } from '../styles/tema';
 
 export default function Header({ title, subtitle, navigation, showBack = true }) {
-  const mostrarVoltar = showBack && !title?.startsWith('Veterin') && navigation?.canGoBack();
+  const { user } = useAuth();
+  const telaPrincipal = title === 'Meu perfil' || title?.startsWith('Olá,') || title?.startsWith('Veterin');
+  const mostrarVoltar = showBack && !telaPrincipal && navigation?.canGoBack?.();
+
+  function voltar() {
+    if (navigation?.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+    if (user?.tipoConta === 'veterinario') {
+      navigation?.navigate?.('PerfilVeterinario');
+      return;
+    }
+    if (user) {
+      navigation?.navigate?.('Inicio');
+      return;
+    }
+    navigation?.navigate?.('Inicial');
+  }
 
   return (
     <View style={styles.container}>
       {mostrarVoltar ? (
-        <Pressable onPress={() => navigation.goBack()} style={styles.voltar}>
+        <Pressable onPress={voltar} style={styles.voltar}>
           <Ionicons name="close" size={22} color={cores.branco} />
         </Pressable>
       ) : null}

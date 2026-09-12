@@ -16,3 +16,7 @@ export function useLogin() {
 export function useRegister() {
   return useMutation({ mutationFn: session.register, retry: false, gcTime: 0 });
 }
+
+export function useUpdateCurrentUser() {
+  return useMutation({ mutationFn: session.updateUser, retry: false, gcTime: 0 });
+}

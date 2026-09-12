@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import DobuLogo from '../components/DobuLogo';
 import Header from '../components/Header';
+import PhotoPicker from '../components/PhotoPicker';
 import { useRegister } from '../hooks/useAuth';
 import { validateRegister } from '../utils/authValidation';
 import { ApiError } from '../api/httpClient';
@@ -16,6 +17,12 @@ export default function Cadastro({ navigation }) {
   const [emailUsuario, setEmailUsuario] = useState('');
   const [senha, setSenha] = useState('');
   const [tipoConta, setTipoConta] = useState('responsavel');
+  const [foto, setFoto] = useState('');
+  const [telefone, setTelefone] = useState('');
+  const [crmv, setCrmv] = useState('');
+  const [ufCrmv, setUfCrmv] = useState('');
+  const [clinica, setClinica] = useState('');
+  const [especialidade, setEspecialidade] = useState('');
   const cadastro = useRegister();
   const salvando = cadastro.isPending;
 
@@ -28,13 +35,21 @@ export default function Cadastro({ navigation }) {
       return;
     }
     try {
-      await cadastro.mutateAsync(dados);
-      setSenha('');
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+      const profileExtras = {
+        foto,
+        telefone: telefone.trim(),
+        crmv: crmv.trim(),
+        ufCrmv: ufCrmv.trim().toUpperCase(),
+        clinica: clinica.trim(),
+        especialidade: especialidade.trim(),
+      };
+      await cadastro.mutateAsync({
+        ...dados,
+        profileExtras,
+      });
     } catch (error) {
-      Alert.alert('Erro no cadastro', error instanceof ApiError ? error.message : 'Não foi possível realizar o cadastro.');
-    } finally {
       cadastro.reset();
+      Alert.alert('Erro no cadastro', error instanceof ApiError ? error.message : 'Não foi possível realizar o cadastro.');
     }
   }
 
@@ -45,6 +60,12 @@ export default function Cadastro({ navigation }) {
         <Header navigation={navigation} title="Cadastro" subtitle="Crie o seu perfil dobu" />
 
         <Card style={styles.cardCadastro}>
+          <PhotoPicker
+            photo={foto}
+            onChangePhoto={setFoto}
+            title="Foto de perfil"
+            disabled={salvando}
+          />
 
           <Text style={styles.label}>Tipo de conta:</Text>
           <View style={styles.tipoLinha}>
@@ -61,6 +82,7 @@ export default function Cadastro({ navigation }) {
           </View>
 
           <Campo label="Nome:" value={nomeUsuario} onChangeText={setNomeUsuario} placeholder="Digite seu nome..." />
+          <Campo label="Telefone:" value={telefone} onChangeText={setTelefone} placeholder="Digite seu telefone..." keyboardType="phone-pad" />
           <Campo
             label="Email:"
             value={emailUsuario}
@@ -69,6 +91,16 @@ export default function Cadastro({ navigation }) {
             keyboardType="email-address"
           />
           <Campo label="Senha:" value={senha} onChangeText={setSenha} placeholder="Digite uma senha..." secureTextEntry />
+
+          {tipoConta === 'veterinario' ? (
+            <View style={styles.blocoVeterinario}>
+              <Text style={styles.subtitulo}>Dados profissionais</Text>
+              <Campo label="CRMV:" value={crmv} onChangeText={setCrmv} placeholder="Ex: 12345" />
+              <Campo label="UF do CRMV:" value={ufCrmv} onChangeText={(value) => setUfCrmv(value.toUpperCase())} placeholder="Ex: SP" />
+              <Campo label="Clínica:" value={clinica} onChangeText={setClinica} placeholder="Nome da clínica ou hospital" />
+              <Campo label="Especialidade:" value={especialidade} onChangeText={setEspecialidade} placeholder="Ex: clínica geral, dermatologia..." />
+            </View>
+          ) : null}
 
           <Button
             title={salvando ? 'Salvando...' : 'Cadastre-se'}
@@ -137,6 +169,16 @@ const styles = StyleSheet.create({
   },
   campo: {
     marginBottom: 9,
+  },
+  blocoVeterinario: {
+    marginTop: 2,
+  },
+  subtitulo: {
+    color: cores.marrom,
+    fontSize: 19,
+    fontWeight: '900',
+    marginTop: 7,
+    marginBottom: 8,
   },
   tipoLinha: {
     flexDirection: 'row',
