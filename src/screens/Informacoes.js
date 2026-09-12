@@ -1,469 +1,224 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput as NativeTextInput, View } from 'react-native';
 
-import BottomNavigation from '../components/BottomNavigation';
-import DobuLogo from '../components/DobuLogo';
-import Header from '../components/Header';
-import { obterUsuario } from '../storage/armazenamento';
-import { estilos } from '../styles/globalStyles';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import QueryState from '../components/QueryState';
+import Screen from '../components/Screen';
+import SelectField from '../components/SelectField';
+import TextInput from '../components/TextInput';
+import { useInformacaoForm, useInformacoesCaderno } from '../hooks/useInformacoes';
+import { ui } from '../styles/ui';
 import { cores } from '../styles/tema';
 
-const filtros = [
-  { id: 'todos', label: 'Todos' },
-  { id: 'responsavel', label: 'Responsável' },
-  { id: 'veterinario', label: 'Médico' },
-  { id: 'urgencia', label: 'Urgência' },
-];
-
-const guias = [
-  {
-    id: 'triagem',
-    publico: 'todos',
-    categoria: 'Primeiros sinais',
-    titulo: 'Como observar antes de procurar ajuda',
-    resumo: 'Veja comportamento, respiração, apetite, água, urina, fezes e dor antes de decidir o próximo passo.',
-    icone: 'eye-outline',
-    alerta: false,
-    passos: [
-      'Observe se o animal está alerta, responsivo e andando normalmente.',
-      'Conte se a respiração está calma ou com esforço, boca aberta, chiado ou língua arroxeada.',
-      'Anote quando comeu, bebeu água, urinou e evacuou pela última vez.',
-      'Registre vômitos, diarreia, sangue, tremores, coceira, tosse ou mancar.',
-      'Tire fotos ou vídeos curtos para mostrar na consulta.',
-    ],
-    quandoAgendar: 'Agende consulta se a mudança persistir por mais de um dia ou voltar várias vezes.',
-  },
-  {
-    id: 'urgencia',
-    publico: 'urgencia',
-    categoria: 'Urgência',
-    titulo: 'Sinais que não devem esperar',
-    resumo: 'Alguns sinais exigem atendimento veterinário imediato.',
-    icone: 'alert-circle-outline',
-    alerta: true,
-    passos: [
-      'Falta de ar, desmaio, convulsão ou dificuldade para ficar em pé.',
-      'Sangramento intenso, atropelamento, queda, mordida profunda ou queimadura.',
-      'Ingestão de veneno, produto de limpeza, remédio humano, chocolate ou planta tóxica.',
-      'Barriga muito inchada, tentativa de vomitar sem conseguir ou dor intensa.',
-      'Gato sem urinar, principalmente macho, ou animal tentando urinar com dor.',
-    ],
-    quandoAgendar: 'Nesses casos, procure atendimento de urgência. Não espere o horário comum de consulta.',
-  },
-  {
-    id: 'consulta-responsavel',
-    publico: 'responsavel',
-    categoria: 'Consulta',
-    titulo: 'O que o responsável deve levar',
-    resumo: 'Uma consulta melhora muito quando o histórico chega organizado.',
-    icone: 'document-text-outline',
-    alerta: false,
-    passos: [
-      'Carteira de vacina e vermifugação.',
-      'Nome e dose de remédios, suplementos e antipulgas usados.',
-      'Data de início dos sintomas e o que mudou na rotina.',
-      'Fotos de feridas, vômito, fezes, urina ou comportamento estranho.',
-      'Exames antigos, receitas e laudos anteriores.',
-    ],
-    quandoAgendar: 'Use a agenda do Dobu para registrar retorno, vacina, exame e acompanhamento.',
-  },
-  {
-    id: 'consulta-medico',
-    publico: 'veterinario',
-    categoria: 'Atendimento',
-    titulo: 'Roteiro rápido para orientar tutores',
-    resumo: 'Perguntas simples ajudam a filtrar urgência, rotina e acompanhamento.',
-    icone: 'medical-outline',
-    alerta: false,
-    passos: [
-      'Confirme espécie, idade, peso aproximado, castração e doenças prévias.',
-      'Pergunte início, frequência, evolução e fatores que pioram ou melhoram.',
-      'Cheque alimentação, água, urina, fezes, vômito, dor e comportamento.',
-      'Solicite mídias quando houver lesão, marcha alterada, tosse ou episódio intermitente.',
-      'Finalize com orientação clara: observar, agendar consulta, retorno ou urgência.',
-    ],
-    quandoAgendar: 'Sempre deixe o retorno já marcado quando houver medicação, exame pendente ou risco de piora.',
-  },
-  {
-    id: 'vacinas',
-    publico: 'todos',
-    categoria: 'Prevenção',
-    titulo: 'Vacinas, vermífugo e antipulgas',
-    resumo: 'Prevenção organizada evita atrasos e reduz risco de doenças.',
-    icone: 'shield-checkmark-outline',
-    alerta: false,
-    passos: [
-      'Cadastre o pet e mantenha os lembretes de vacina atualizados.',
-      'Registre lote, data e profissional quando possível.',
-      'Não aplique vacina em animal doente sem orientação veterinária.',
-      'Vermífugo e antipulgas variam por peso, idade, ambiente e risco.',
-      'Filhotes, idosos e animais com doença crônica precisam de acompanhamento mais próximo.',
-    ],
-    quandoAgendar: 'Agende revisões preventivas mesmo quando o animal parece bem.',
-  },
-  {
-    id: 'alimentacao',
-    publico: 'responsavel',
-    categoria: 'Rotina',
-    titulo: 'Alimentação e água',
-    resumo: 'Mudanças em comida e sede costumam ser sinais importantes.',
-    icone: 'nutrition-outline',
-    alerta: false,
-    passos: [
-      'Evite trocar ração de uma vez; faça transição gradual quando indicada.',
-      'Não ofereça remédio humano, osso cozido, chocolate, uva, cebola ou alho.',
-      'Aumento grande de sede ou urina merece avaliação.',
-      'Perda de apetite por mais de 24 horas preocupa; em gatos, não espere muito.',
-      'Vômitos repetidos, sangue ou perda de peso precisam de consulta.',
-    ],
-    quandoAgendar: 'Marque avaliação quando apetite, peso, sede ou fezes mudarem sem explicação.',
-  },
-  {
-    id: 'comportamento',
-    publico: 'todos',
-    categoria: 'Bem-estar',
-    titulo: 'Comportamento também é saúde',
-    resumo: 'Mudança de comportamento pode indicar dor, medo, estresse ou doença.',
-    icone: 'happy-outline',
-    alerta: false,
-    passos: [
-      'Apatia, isolamento ou agressividade repentina merecem atenção.',
-      'Coceira intensa, lamber patas ou balançar orelhas pode indicar desconforto.',
-      'Mancar, evitar pular ou dificuldade para levantar pode ser dor.',
-      'Mudanças na caixa de areia ou xixi fora do lugar podem ser problema urinário.',
-      'Ambiente, enriquecimento, rotina e sono fazem parte do cuidado.',
-    ],
-    quandoAgendar: 'Se o comportamento mudou sem motivo claro, registre no app e converse com o médico.',
-  },
-  {
-    id: 'dobucam',
-    publico: 'todos',
-    categoria: 'Monitoramento',
-    titulo: 'Como usar Dobu-Cam de forma útil',
-    resumo: 'A câmera ajuda a contar a história do animal, mas não substitui exame clínico.',
-    icone: 'videocam-outline',
-    alerta: false,
-    passos: [
-      'Use videos curtos para mostrar tosse, crise, mancar ou comportamento repetitivo.',
-      'Compare repouso, atividade e ausência de movimento com a rotina normal.',
-      'Anote horário em que o evento aconteceu.',
-      'Leve o registro para a consulta ou retorno.',
-      'Se houver sinal de urgência, procure atendimento mesmo sem vídeo.',
-    ],
-    quandoAgendar: 'Use os registros para decidir melhor o tipo de consulta e prioridade.',
-  },
-];
-
-function normalizar(valor) {
-  return (valor || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-}
-
-export default function Informacoes({ navigation }) {
-  const [pesquisa, setPesquisa] = useState('');
-  const [filtro, setFiltro] = useState('todos');
-  const [aberto, setAberto] = useState('urgencia');
-  const [usuario, setUsuario] = useState(null);
-
-  useFocusEffect(
-    useCallback(() => {
-      obterUsuario().then(setUsuario);
-    }, [])
-  );
-
-  const ehVeterinario = usuario?.tipoConta === 'veterinario';
-
-  const filtradas = useMemo(() => {
-    const termo = normalizar(pesquisa);
-
-    return guias.filter((item) => {
-      const passaPerfil =
-        filtro === 'todos' ||
-        item.publico === 'todos' ||
-        item.publico === filtro;
-      const passaBusca =
-        !termo ||
-        normalizar(`${item.categoria} ${item.titulo} ${item.resumo} ${item.passos.join(' ')}`).includes(termo);
-
-      return passaPerfil && passaBusca;
-    });
-  }, [filtro, pesquisa]);
+export default function Informacoes({ navigation, route }) {
+  const caderno = useInformacoesCaderno(route?.params?.petId);
+  const form = useInformacaoForm(caderno.petId, caderno.mutations.criar);
 
   return (
-    <SafeAreaView style={estilos.tela}>
-      <ScrollView contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
-        <View style={estilos.topoLogo}>
-          <DobuLogo />
-        </View>
-        <Header
-          navigation={navigation}
-          title="Guia de cuidado"
-          subtitle={ehVeterinario ? 'Apoio para orientar pacientes' : 'Orientações para a vida animal'}
+    <Screen navigation={navigation} title="Caderno de cuidados" subtitle="Registros organizados por animal" active="home">
+      <QueryState
+        query={caderno.petsQuery}
+        empty={Boolean(caderno.petsQuery.data && caderno.petsQuery.data.length === 0)}
+        emptyTitle="Nenhum animal disponível"
+        emptyMessage="Cadastre ou vincule um animal para criar seu caderno de cuidados."
+      >
+        <SelectField
+          label="Animal"
+          value={caderno.petId}
+          onChange={caderno.setPetId}
+          options={caderno.petOptions}
+          placeholder="Selecione um animal"
+          disabled={caderno.mutations.criar.isPending || caderno.mutations.excluir.isPending}
         />
 
-        <View style={styles.alerta}>
-          <Ionicons name="alert-circle-outline" size={24} color={cores.vermelho} />
-          <View style={styles.alertaTextoArea}>
-            <Text style={styles.alertaTitulo}>Não substitui atendimento veterinário</Text>
-            <Text style={styles.alertaTexto}>
-              Em falta de ar, convulsão, intoxicação, trauma, sangramento ou dor intensa, procure urgência.
-            </Text>
+        <View style={styles.acoesTopo}>
+          <Button
+            title={`Agendar para ${caderno.pet?.nome || 'o animal'}`}
+            icon="calendar-outline"
+            cor="cinzaEscuro"
+            disabled={!caderno.petId}
+            onPress={() => navigation.navigate('AdicionarAgendamento', { petId: caderno.petId })}
+            style={styles.acaoTopo}
+          />
+        </View>
+
+        <Text style={styles.secaoTitulo}>Cuidados da raça</Text>
+        {caderno.catalogosQuery.isPending ? (
+          <Card style={styles.cardEstado}>
+            <ActivityIndicator color={cores.principalEscuro} />
+            <Text style={styles.estadoTexto}>Consultando os dados da raça…</Text>
+          </Card>
+        ) : caderno.catalogosQuery.isError ? (
+          <Card style={styles.cardEstado}>
+            <Ionicons name="cloud-offline-outline" size={26} color={cores.textoClaro} />
+            <Text style={styles.estadoTexto}>Os cuidados da raça não puderam ser consultados agora.</Text>
+            <Button
+              title="Tentar novamente"
+              cor="branco"
+              disabled={caderno.catalogosQuery.isFetching}
+              onPress={() => caderno.catalogosQuery.refetch()}
+              style={styles.botaoCompacto}
+            />
+          </Card>
+        ) : caderno.cuidado ? (
+          <Card style={styles.cuidadoCard}>
+            <View style={styles.cardCabecalho}>
+              <View style={styles.iconeCuidado}>
+                <Ionicons name="paw-outline" size={22} color={cores.principalEscuro} />
+              </View>
+              <View style={styles.cardTituloArea}>
+                <Text style={styles.cardEtiqueta}>Sobre a raça</Text>
+                <Text style={styles.cardTitulo}>{caderno.cuidado.nome}</Text>
+              </View>
+            </View>
+            <Text style={styles.cardDescricao}>{caderno.cuidado.texto}</Text>
+          </Card>
+        ) : (
+          <Card style={styles.cardEstado}>
+            <Ionicons name="information-circle-outline" size={26} color={cores.textoClaro} />
+            <Text style={styles.estadoTexto}>Esta raça ainda não possui cuidados cadastrados.</Text>
+          </Card>
+        )}
+
+        <View style={styles.listaCabecalho}>
+          <View>
+            <Text style={styles.secaoTituloSemMargem}>Registros de {caderno.pet?.nome || 'animal'}</Text>
+            {caderno.informacoesQuery.isSuccess ? (
+              <Text style={styles.contador}>{caderno.informacoes.length} registro(s) do usuário</Text>
+            ) : null}
           </View>
         </View>
 
         <View style={styles.busca}>
-          <Ionicons name="search-outline" size={22} color={cores.textoClaro} />
-          <TextInput
-            value={pesquisa}
-            onChangeText={setPesquisa}
-            placeholder="Buscar: vacina, vômito, urina, dor..."
+          <Ionicons name="search-outline" size={21} color={cores.textoClaro} />
+          <NativeTextInput
+            accessibilityLabel="Buscar nos registros"
+            value={caderno.pesquisa}
+            onChangeText={caderno.setPesquisa}
+            placeholder="Buscar por título ou descrição"
             placeholderTextColor={cores.textoClaro}
-            style={styles.input}
+            style={styles.buscaInput}
           />
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtros}>
-          {filtros.map((item) => {
-            const ativo = filtro === item.id;
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => setFiltro(item.id)}
-                style={[styles.filtro, ativo && styles.filtroAtivo]}
-              >
-                <Text style={[styles.filtroTexto, ativo && styles.filtroTextoAtivo]}>{item.label}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.resumoLinha}>
-          <Text style={styles.resultado}>{filtradas.length} guia(s)</Text>
-          <Text style={styles.perfil}>{ehVeterinario ? 'Modo médico' : 'Modo responsável'}</Text>
-        </View>
-
-        {filtradas.map((item) => {
-          const estaAberto = aberto === item.id;
-          return (
-            <View key={item.id} style={[styles.card, item.alerta && styles.cardAlerta]}>
-              <Pressable onPress={() => setAberto(estaAberto ? '' : item.id)} style={styles.cardTopo}>
-                <View style={[styles.icone, item.alerta && styles.iconeAlerta]}>
-                  <Ionicons
-                    name={item.icone}
-                    size={22}
-                    color={item.alerta ? cores.vermelho : cores.principalEscuro}
-                  />
+        <QueryState
+          query={caderno.informacoesQuery}
+          empty={Boolean(caderno.informacoesQuery.data && caderno.informacoes.length === 0)}
+          emptyTitle="Nenhum registro neste caderno"
+          emptyMessage="Use o formulário abaixo para guardar a primeira observação deste animal."
+        >
+          {caderno.informacoesFiltradas.length === 0 ? (
+            <Card style={styles.cardEstado}>
+              <Ionicons name="search-outline" size={26} color={cores.textoClaro} />
+              <Text style={styles.estadoTexto}>Nenhum registro corresponde à busca.</Text>
+            </Card>
+          ) : caderno.informacoesFiltradas.map((informacao) => (
+            <Card key={informacao.id} style={styles.notaCard}>
+              <View style={styles.notaTopo}>
+                <View style={styles.notaTituloArea}>
+                  <Text style={styles.registroEtiqueta}>Registro do usuário</Text>
+                  <Text style={styles.notaTitulo}>{informacao.titulo}</Text>
                 </View>
-                <View style={styles.cardTituloArea}>
-                  <Text style={styles.categoria}>{item.categoria}</Text>
-                  <Text style={styles.titulo}>{item.titulo}</Text>
-                </View>
-                <Ionicons
-                  name={estaAberto ? 'chevron-up' : 'chevron-down'}
-                  size={22}
-                  color={cores.textoClaro}
-                />
-              </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    caderno.mutations.excluir.isPending && caderno.mutations.excluir.variables?.id === informacao.id
+                      ? `Excluindo ${informacao.titulo || 'registro'}`
+                      : `Excluir ${informacao.titulo || 'registro'}`
+                  }
+                  accessibilityState={{ disabled: caderno.mutations.excluir.isPending }}
+                  disabled={caderno.mutations.excluir.isPending}
+                  onPress={() => caderno.confirmarExclusao(informacao)}
+                  style={({ pressed }) => [styles.excluir, pressed && styles.pressionado]}
+                >
+                  {caderno.mutations.excluir.isPending && caderno.mutations.excluir.variables?.id === informacao.id ? (
+                    <ActivityIndicator size="small" color={cores.vermelho} />
+                  ) : (
+                    <Ionicons name="trash-outline" size={20} color={cores.vermelho} />
+                  )}
+                </Pressable>
+              </View>
+              <Text style={styles.notaDescricao}>{informacao.descricao}</Text>
+            </Card>
+          ))}
+        </QueryState>
 
-              <Text style={styles.resumo}>{item.resumo}</Text>
+        {caderno.mutations.excluir.isError ? (
+          <Text accessibilityRole="alert" style={ui.error}>
+            {caderno.mutations.excluir.error?.message || 'Não foi possível excluir o registro.'}
+          </Text>
+        ) : null}
 
-              {estaAberto ? (
-                <View style={styles.detalhes}>
-                  {item.passos.map((passo, index) => (
-                    <View key={passo} style={styles.passo}>
-                      <Text style={styles.numero}>{index + 1}</Text>
-                      <Text style={styles.passoTexto}>{passo}</Text>
-                    </View>
-                  ))}
-
-                  <View style={styles.acao}>
-                    <Ionicons name="calendar-outline" size={18} color={cores.principalEscuro} />
-                    <Text style={styles.acaoTexto}>{item.quandoAgendar}</Text>
-                  </View>
-                </View>
-              ) : null}
+        <Text style={styles.secaoTitulo}>Adicionar registro do usuário</Text>
+        <Card style={styles.formCard}>
+          <Text style={styles.formAjuda}>
+            Anote rotinas e observações que você deseja guardar sobre {caderno.pet?.nome || 'este animal'}.
+          </Text>
+          <TextInput label="Título" value={form.titulo} onChangeText={form.setTitulo} placeholder="Ex.: Rotina de alimentação" editable={!form.isSubmitting} />
+          {form.erros.titulo ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.titulo}</Text> : null}
+          <TextInput
+            label="Descrição"
+            value={form.descricao}
+            onChangeText={form.setDescricao}
+            placeholder="Escreva a observação que deseja registrar"
+            multiline
+            editable={!form.isSubmitting}
+          />
+          {form.erros.descricao ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.descricao}</Text> : null}
+          {form.erros.petId ? <Text accessibilityRole="alert" style={ui.error}>{form.erros.petId}</Text> : null}
+          {form.error ? <Text accessibilityRole="alert" style={ui.error}>{form.error}</Text> : null}
+          {form.success ? (
+            <Text accessibilityLiveRegion="polite" style={styles.success}>{form.success}</Text>
+          ) : null}
+          {form.isSubmitting ? (
+            <View accessibilityLiveRegion="polite" style={styles.statusLinha}>
+              <ActivityIndicator size="small" color={cores.principalEscuro} />
+              <Text style={styles.statusTexto}>Salvando registro…</Text>
             </View>
-          );
-        })}
-      </ScrollView>
-      <BottomNavigation
-        navigation={navigation}
-        active="home"
-        homeRoute={usuario?.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio'}
-      />
-    </SafeAreaView>
+          ) : null}
+          <Button
+            title={form.isSubmitting ? 'Salvando…' : 'Adicionar ao caderno'}
+            icon={form.isSubmitting ? undefined : 'add-circle-outline'}
+            disabled={form.isSubmitting || !caderno.petId}
+            onPress={form.salvar}
+          />
+        </Card>
+      </QueryState>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  alerta: {
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#F3B0B0',
-    backgroundColor: '#FFF5F5',
-    padding: 12,
-    flexDirection: 'row',
-    marginBottom: 14,
-  },
-  alertaTextoArea: {
-    flex: 1,
-    marginLeft: 10,
-  },
-  alertaTitulo: {
-    color: cores.vermelho,
-    fontWeight: '900',
-    fontSize: 15,
-  },
-  alertaTexto: {
-    color: cores.texto,
-    lineHeight: 20,
-    marginTop: 3,
-  },
-  busca: {
-    minHeight: 52,
-    borderRadius: 8,
-    backgroundColor: cores.branco,
-    borderWidth: 1,
-    borderColor: cores.cinza,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 14,
-    marginBottom: 12,
-  },
-  input: {
-    flex: 1,
-    color: cores.texto,
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  filtros: {
-    gap: 8,
-    paddingBottom: 12,
-  },
-  filtro: {
-    minHeight: 38,
-    borderRadius: 19,
-    backgroundColor: cores.branco,
-    borderWidth: 1,
-    borderColor: cores.cinza,
-    justifyContent: 'center',
-    paddingHorizontal: 14,
-  },
-  filtroAtivo: {
-    backgroundColor: cores.cinzaEscuro,
-    borderColor: cores.cinzaEscuro,
-  },
-  filtroTexto: {
-    color: cores.texto,
-    fontWeight: '900',
-  },
-  filtroTextoAtivo: {
-    color: cores.branco,
-  },
-  resumoLinha: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  resultado: {
-    color: cores.textoClaro,
-    fontWeight: '800',
-  },
-  perfil: {
-    color: cores.principalEscuro,
-    fontWeight: '900',
-  },
-  card: {
-    backgroundColor: cores.branco,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: cores.cinza,
-    padding: 14,
-    marginBottom: 12,
-  },
-  cardAlerta: {
-    borderColor: '#F3B0B0',
-  },
-  cardTopo: {
-    minHeight: 46,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  icone: {
-    width: 42,
-    height: 42,
-    borderRadius: 8,
-    backgroundColor: cores.fundoClaro,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  iconeAlerta: {
-    backgroundColor: '#FFF1F1',
-  },
-  cardTituloArea: {
-    flex: 1,
-  },
-  categoria: {
-    color: cores.principalEscuro,
-    fontWeight: '900',
-    fontSize: 12,
-    textTransform: 'uppercase',
-  },
-  titulo: {
-    color: cores.marrom,
-    fontSize: 17,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-  resumo: {
-    color: cores.textoClaro,
-    lineHeight: 21,
-    marginTop: 10,
-  },
-  detalhes: {
-    marginTop: 12,
-  },
-  passo: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 9,
-  },
-  numero: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: cores.principal,
-    color: cores.branco,
-    textAlign: 'center',
-    lineHeight: 24,
-    fontWeight: '900',
-    marginRight: 9,
-  },
-  passoTexto: {
-    flex: 1,
-    color: cores.texto,
-    lineHeight: 21,
-  },
-  acao: {
-    borderRadius: 8,
-    backgroundColor: cores.fundo,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    padding: 12,
-    marginTop: 4,
-  },
-  acaoTexto: {
-    flex: 1,
-    color: cores.texto,
-    fontWeight: '800',
-    lineHeight: 20,
-    marginLeft: 8,
-  },
+  acoesTopo: { marginBottom: 22 },
+  acaoTopo: { width: '100%' },
+  secaoTitulo: { color: cores.marrom, fontSize: 19, fontWeight: '900', marginBottom: 10, marginTop: 4 },
+  secaoTituloSemMargem: { color: cores.marrom, fontSize: 19, fontWeight: '900' },
+  cuidadoCard: { marginBottom: 22 },
+  cardCabecalho: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  iconeCuidado: { width: 42, height: 42, borderRadius: 21, backgroundColor: cores.fundo, alignItems: 'center', justifyContent: 'center', marginRight: 11 },
+  cardTituloArea: { flex: 1 },
+  cardEtiqueta: { color: cores.principalEscuro, fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
+  cardTitulo: { color: cores.marrom, fontSize: 18, fontWeight: '900', marginTop: 2 },
+  cardDescricao: { color: cores.texto, fontSize: 16, lineHeight: 24 },
+  cardEstado: { alignItems: 'center', marginBottom: 22, paddingVertical: 22 },
+  estadoTexto: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, textAlign: 'center', marginTop: 8 },
+  botaoCompacto: { alignSelf: 'stretch', marginTop: 10 },
+  formCard: { marginBottom: 24 },
+  formAjuda: { color: cores.textoClaro, fontSize: 15, lineHeight: 22, marginBottom: 18 },
+  listaCabecalho: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 10 },
+  contador: { color: cores.textoClaro, fontSize: 13, fontWeight: '700', marginTop: 3 },
+  success: { color: '#2E6B32', fontSize: 15, fontWeight: '800', lineHeight: 22, marginBottom: 14 },
+  statusLinha: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  statusTexto: { color: cores.textoClaro, fontSize: 15, fontWeight: '800', marginLeft: 8 },
+  busca: { minHeight: 52, backgroundColor: cores.branco, borderRadius: 8, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 14 },
+  buscaInput: { flex: 1, color: cores.texto, fontSize: 16, marginLeft: 8 },
+  notaCard: { marginBottom: 12 },
+  notaTopo: { flexDirection: 'row', alignItems: 'flex-start' },
+  notaTituloArea: { flex: 1, paddingRight: 8 },
+  registroEtiqueta: { alignSelf: 'flex-start', color: cores.texto, backgroundColor: cores.amareloClaro, borderRadius: 8, overflow: 'hidden', paddingHorizontal: 9, paddingVertical: 5, fontSize: 12, fontWeight: '800', marginBottom: 8 },
+  notaTitulo: { color: cores.marrom, fontSize: 18, fontWeight: '900' },
+  notaDescricao: { color: cores.texto, fontSize: 16, lineHeight: 24, marginTop: 10 },
+  excluir: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFF1F1', borderWidth: 1, borderColor: '#F6C7C7', alignItems: 'center', justifyContent: 'center' },
+  pressionado: { opacity: 0.72 },
 });
