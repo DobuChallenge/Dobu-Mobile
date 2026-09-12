@@ -10,6 +10,7 @@ export default function Button({ title, icon, cor = 'amarelo', onPress, style, d
   return (
     <Pressable
       disabled={disabled}
+      accessibilityRole="button"
       accessibilityState={{ disabled }}
       onPress={onPress}
       style={({ pressed }) => [
@@ -18,6 +19,7 @@ export default function Button({ title, icon, cor = 'amarelo', onPress, style, d
         cinzaEscuro && styles.cinzaEscuro,
         vermelho && styles.vermelho,
         pressed && styles.pressionado,
+        disabled && { opacity: 0.55 },
         style,
       ]}
     >
