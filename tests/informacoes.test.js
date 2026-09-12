@@ -4,14 +4,20 @@ import { MutationObserver, QueryClient } from '@tanstack/react-query';
 
 import { apiConfig } from '../src/api/config.js';
 import { informacoesApi } from '../src/api/informacoes.js';
+import { vacinasApi } from '../src/api/vacinas.js';
 import {
   cuidadoDaRaca,
   criarControleSubmissao,
   criarGuardaRascunho,
   filtrarInformacoes,
+  filtrarRacas,
+  filtrarVacinas,
+  formatarDataVacina,
   informacaoMutationOptions,
   informacoesQuery,
+  resumirRaca,
   selecionarPetDisponivel,
+  vacinasQuery,
   validarInformacao,
 } from '../src/services/informacoes.js';
 
@@ -64,6 +70,50 @@ test('busca encontra registros do usuário sem distinguir acentos ou maiúsculas
   assert.deepEqual(filtrarInformacoes(notas, 'ALIMENTACAO').map((item) => item.id), ['1']);
   assert.deepEqual(filtrarInformacoes(notas, 'racao manha').map((item) => item.id), ['1']);
   assert.deepEqual(filtrarInformacoes(notas, '  ').map((item) => item.id), ['1', '2']);
+});
+
+test('busca de raças usa nome, espécie, porte, descrição e cuidados', () => {
+  const racas = [
+    { id: 'r1', nome: 'Golden Retriever', especieId: 'e1', porte: 'Grande', expectativaVida: 12, descricao: 'Cão sociável', cuidados: 'Escovação frequente' },
+    { id: 'r2', nome: 'Siamês', especieId: 'e2', porte: 'Pequeno', expectativaVida: 15, descricao: 'Gato ativo', cuidados: 'Ambiente enriquecido' },
+  ];
+  const especies = [{ id: 'e1', nome: 'Canina' }, { id: 'e2', nome: 'Felina' }];
+
+  assert.deepEqual(filtrarRacas(racas, especies, 'escovacao').map((item) => item.id), ['r1']);
+  assert.deepEqual(filtrarRacas(racas, especies, 'felina pequeno').map((item) => item.id), ['r2']);
+  assert.deepEqual(resumirRaca(filtrarRacas(racas, especies, 'golden')[0]), [
+    { label: 'Espécie', value: 'Canina' },
+    { label: 'Porte', value: 'Grande' },
+    { label: 'Expectativa de vida', value: '12 anos' },
+  ]);
+});
+
+test('vacinas são filtradas pelos pets visíveis e formatam datas', () => {
+  const pets = [{ id: 'p1', nome: 'Lua' }];
+  const vacinas = [
+    { id: 'v1', nome: 'V10', petId: 'p1', dataAplicacao: '2026-09-12T00:00:00', dataProximaDose: '2027-09-12T00:00:00' },
+    { id: 'v2', nome: 'Raiva', petId: 'p2', dataAplicacao: '2026-09-01T00:00:00' },
+  ];
+
+  assert.deepEqual(filtrarVacinas(vacinas, pets, 'lua v10').map((item) => item.id), ['v1']);
+  assert.deepEqual(filtrarVacinas(vacinas, pets, '', 'p2'), []);
+  assert.equal(formatarDataVacina('2027-09-12T00:00:00'), '12/09/2027');
+  assert.equal(formatarDataVacina(null), 'Não informada');
+});
+
+test('API de vacinas e query usam endpoints reais', async () => {
+  const calls = [];
+  globalThis.fetch = async (...args) => {
+    calls.push(args);
+    return Response.json([]);
+  };
+
+  await vacinasApi.listar();
+  await vacinasApi.listarPorPet('pet/1');
+
+  assert.equal(calls[0][0], 'https://api.example.test/api/vacinas');
+  assert.equal(calls[1][0], 'https://api.example.test/api/vacinas/pet/pet%2F1');
+  assert.deepEqual(vacinasQuery(user).queryKey, ['dobu', 'owner-1', 'vacinas']);
 });
 
 test('validação aplica os limites do backend e devolve valores aparados', () => {

@@ -66,5 +66,6 @@ test('filtros pesquisam nomes sem acento e lembretes excluem compromissos encerr
   ];
   assert.deepEqual(filterAppointments(list, { search: 'agata', petId: 'p' }).map((item) => item.id), ['1']);
   assert.deepEqual(upcomingAppointments(list, new Date('2028-02-29T08:00:00')).map((item) => item.id), ['1']);
+  assert.deepEqual(upcomingAppointments(list, new Date('2028-02-29T12:00:00')).map((item) => item.id), ['1']);
   assert.deepEqual(upcomingAppointments(list, new Date('2028-03-01T08:00:00')), []);
 });

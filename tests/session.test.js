@@ -8,11 +8,13 @@ const response = () => ({ token: `e30.${Buffer.from(JSON.stringify({ exp: Math.f
 function setup(apiResponse = response()) {
   let saved = null;
   let token = null;
+  let savedProfile = null;
   const storage = { read: async () => saved, write: async (value) => { saved = value; }, remove: async () => { saved = null; } };
   const api = { login: async () => apiResponse, cadastrar: async () => apiResponse };
+  const profileExtrasStorage = { save: async (identity, extras) => { savedProfile = { identity, extras }; } };
   const queryClient = new QueryClient();
-  const options = { storage, api, queryClient, setToken: (value) => { token = value; } };
-  return { controller: createSessionController(options), options, queryClient, saved: () => saved, token: () => token };
+  const options = { storage, api, queryClient, setToken: (value) => { token = value; }, profileExtrasStorage };
+  return { controller: createSessionController(options), options, queryClient, saved: () => saved, token: () => token, savedProfile: () => savedProfile };
 }
 
 test('persiste somente sessão mínima e restaura usuário e token em nova instância', async () => {
@@ -36,6 +38,53 @@ test('logout remove sessão, token e cache protegido', async () => {
   assert.equal(state.token(), null);
   assert.equal(state.controller.getUser(), null);
   assert.equal(state.queryClient.getQueryCache().getAll().length, 0);
+});
+
+
+test('cadastro salva extras antes de publicar usuario', async () => {
+  const state = setup({ ...response(), tipoUsuario: 'VETERINARIO' });
+  let profileWhenPublished = null;
+  state.controller.subscribe(() => {
+    profileWhenPublished = state.savedProfile();
+  });
+  await state.controller.register({
+    nome: 'Vet',
+    email: 'vet@example.test',
+    senha: 'segredo',
+    tipoUsuario: 'VETERINARIO',
+    profileExtras: { crmv: '12345', clinica: 'Clinica Dobu', especialidade: 'Clinica geral' },
+  });
+  assert.deepEqual(profileWhenPublished, {
+    identity: { id: 'user-id', email: 'teste@example.test' },
+    extras: { crmv: '12345', clinica: 'Clinica Dobu', especialidade: 'Clinica geral', tipoConta: 'veterinario' },
+  });
+  assert.deepEqual(state.controller.getUser().profileExtras, {
+    crmv: '12345',
+    clinica: 'Clinica Dobu',
+    especialidade: 'Clinica geral',
+    tipoConta: 'veterinario',
+  });
+});
+
+test('atualizacao de usuario preserva e substitui extras do perfil atual', async () => {
+  const state = setup({ ...response(), tipoUsuario: 'VETERINARIO' });
+  await state.controller.register({
+    profileExtras: { crmv: '12345', clinica: 'Clinica Dobu' },
+  });
+  await state.controller.updateUser({ nome: 'Dra Teste' });
+  assert.deepEqual(state.controller.getUser().profileExtras, {
+    crmv: '12345',
+    clinica: 'Clinica Dobu',
+    tipoConta: 'veterinario',
+  });
+  await state.controller.updateUser({
+    profileExtras: { crmv: '54321', clinica: 'Nova Clinica', especialidade: 'Dermatologia' },
+  });
+  assert.deepEqual(state.controller.getUser().profileExtras, {
+    crmv: '54321',
+    clinica: 'Nova Clinica',
+    especialidade: 'Dermatologia',
+  });
 });
 
 test('sessão expirada é descartada na restauração', async () => {

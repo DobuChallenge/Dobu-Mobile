@@ -8,10 +8,13 @@ import {
   cuidadoDaRaca,
   criarControleSubmissao,
   criarGuardaRascunho,
+  filtrarRacas,
   filtrarInformacoes,
+  filtrarVacinas,
   informacaoMutationOptions,
   informacoesQuery,
   selecionarPetDisponivel,
+  vacinasQuery,
   validarInformacao,
 } from '../services/informacoes';
 
@@ -30,11 +33,15 @@ export function useInformacaoMutations() {
 }
 
 export function useInformacoesCaderno(petIdDaRota) {
+  const { user } = useAuth();
   const petsQuery = usePets();
   const catalogosQuery = useCatalogos();
   const mutations = useInformacaoMutations();
+  const vacinasQueryResult = useQuery(vacinasQuery(user));
   const [petId, setPetId] = useState('');
   const [pesquisa, setPesquisa] = useState('');
+  const [pesquisaRaca, setPesquisaRaca] = useState('');
+  const [pesquisaVacina, setPesquisaVacina] = useState('');
   const rotaAplicada = useRef('');
   const pets = petsQuery.data || [];
   const petIdSolicitado = String(petIdDaRota || '');
@@ -53,6 +60,14 @@ export function useInformacoesCaderno(petIdDaRota) {
   const informacoesFiltradas = useMemo(
     () => filtrarInformacoes(informacoes, pesquisa),
     [informacoes, pesquisa]
+  );
+  const racasFiltradas = useMemo(
+    () => filtrarRacas(catalogosQuery.data?.racas, catalogosQuery.data?.especies, pesquisaRaca),
+    [catalogosQuery.data?.especies, catalogosQuery.data?.racas, pesquisaRaca]
+  );
+  const vacinasFiltradas = useMemo(
+    () => filtrarVacinas(vacinasQueryResult.data, pets, pesquisaVacina, petIdVisivel),
+    [petIdVisivel, pesquisaVacina, pets, vacinasQueryResult.data]
   );
   const cuidado = useMemo(
     () => cuidadoDaRaca(pet, catalogosQuery.data),
@@ -82,6 +97,7 @@ export function useInformacoesCaderno(petIdDaRota) {
   return {
     petsQuery,
     catalogosQuery,
+    vacinasQuery: vacinasQueryResult,
     informacoesQuery: informacoesQueryResult,
     mutations,
     pet,
@@ -90,8 +106,14 @@ export function useInformacoesCaderno(petIdDaRota) {
     setPetId,
     pesquisa,
     setPesquisa,
+    pesquisaRaca,
+    setPesquisaRaca,
+    pesquisaVacina,
+    setPesquisaVacina,
     informacoes,
     informacoesFiltradas,
+    racasFiltradas,
+    vacinasFiltradas,
     cuidado,
     confirmarExclusao,
   };

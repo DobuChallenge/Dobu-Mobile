@@ -34,5 +34,6 @@ export function filterAppointments(items, { search = '', status = '', petId = ''
 }
 
 export function upcomingAppointments(items, now = new Date()) {
-  return items.filter((item) => !['cancelado', 'concluido'].includes(normalize(item.status)) && new Date(item.dataAgendamento) >= now);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return items.filter((item) => !['cancelado', 'concluido'].includes(normalize(item.status)) && new Date(item.dataAgendamento) >= today);
 }

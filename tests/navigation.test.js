@@ -21,7 +21,7 @@ test('restauração e falha de restauração expõem apenas carregamento', () =>
 test('visitante não consegue navegar ou resetar para uma rota protegida', () => {
   const { router, state, options } = setup({ user: null });
   assert.equal(state.routes[0].name, 'Inicial');
-  for (const name of ['Inicio', 'PerfilUsuario', 'PerfilVeterinario', 'CadastroPet', 'ListaPets', 'PerfilPet', 'DobuCam', 'Agendamentos', 'AdicionarAgendamento', 'Lembretes', 'Informacoes']) {
+  for (const name of ['Inicio', 'PerfilUsuario', 'PerfilVeterinario', 'EditarPerfil', 'CadastroPet', 'ListaPets', 'PerfilPet', 'DobuCam', 'Agendamentos', 'AdicionarAgendamento', 'Lembretes', 'Informacoes']) {
     assert.equal(router.getStateForAction(state, CommonActions.navigate(name), options), null);
     assert.equal(router.getStateForAction(state, CommonActions.reset({ index: 0, routes: [{ name }] }), options), null);
   }

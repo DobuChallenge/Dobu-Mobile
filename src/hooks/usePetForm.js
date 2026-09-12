@@ -7,6 +7,7 @@ const EMPTY_DRAFT = {
   especieId: '',
   racaId: '',
   responsavelId: '',
+  foto: '',
 };
 
 function resolvePetCatalog(pet, catalogos) {
@@ -62,6 +63,7 @@ export function usePetForm({ id, pet, catalogos, user, savePet, onSaved }) {
       especieId: selectedBreed?.especieId || pet?.raca?.especieId || '',
       racaId: pet?.racaId || '',
       responsavelId: user.tipoConta === 'veterinario' ? pet?.responsavelId || '' : user.id,
+      foto: pet?.foto || '',
     });
     setError(null);
     initializedKey.current = formKey;
