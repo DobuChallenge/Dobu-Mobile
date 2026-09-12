@@ -13,7 +13,7 @@ export default function AuthProvider({ children }) {
     setRestoring(true);
     setRestoreError(null);
     try {
-      await AsyncStorage.multiRemove([CHAVES.USUARIO, CHAVES.USUARIOS]);
+      await AsyncStorage.multiRemove(Object.values(CHAVES));
       await session.restore();
     } catch {
       setRestoreError('Não foi possível restaurar a sessão. Tente novamente.');

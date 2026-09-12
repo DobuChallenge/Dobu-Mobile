@@ -6,15 +6,15 @@ import { cores } from '../styles/tema';
 export default function BottomNavigation({ navigation, active, homeRoute = 'Inicio' }) {
   const insets = useSafeAreaInsets();
   const items = [
-    { route: homeRoute, icon: 'home-outline', id: 'home' },
-    { route: 'Lembretes', icon: 'notifications-outline', id: 'lembretes' },
-    { route: 'PerfilUsuario', icon: 'person-circle-outline', id: 'perfil' },
+    { route: homeRoute, icon: 'home-outline', id: 'home', label: 'Início' },
+    { route: 'Lembretes', icon: 'notifications-outline', id: 'lembretes', label: 'Lembretes' },
+    { route: 'PerfilUsuario', icon: 'person-circle-outline', id: 'perfil', label: 'Meu perfil' },
   ];
 
   return (
     <View style={[styles.rodape, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       {items.map((item) => (
-        <Pressable key={item.id} onPress={() => navigation.navigate(item.route)} style={styles.botao}>
+        <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: active === item.id }} onPress={() => navigation.navigate(item.route)} style={styles.botao}>
           <Ionicons
             name={item.icon}
             size={22}

@@ -13,20 +13,10 @@
       "backgroundColor": "#F1F1F1"
     },
     "ios": {
-      "supportsTablet": true,
-      "infoPlist": {
-        "NSCameraUsageDescription": "O Dobu usa a câmera para cadastrar fotos do usuário e dos pets.",
-        "NSPhotoLibraryUsageDescription": "O Dobu usa a galeria para escolher fotos do usuário e dos pets."
-      }
+      "supportsTablet": true
     },
     "android": {
       "usesCleartextTraffic": true,
-      "permissions": [
-        "CAMERA",
-        "READ_MEDIA_IMAGES",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE"
-      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#F1F1F1"

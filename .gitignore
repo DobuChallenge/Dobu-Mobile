@@ -40,3 +40,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Referências temporárias; a entrega deste repositório é o aplicativo mobile
+/Dobu-.NET/
+/Dobu-Devops/
