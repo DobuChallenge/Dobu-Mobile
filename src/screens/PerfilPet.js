@@ -1,168 +1,164 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
-import { useCallback, useState } from 'react';
-import { Alert, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import BottomNavigation from '../components/BottomNavigation';
+import { useState } from 'react';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import DobuLogo from '../components/DobuLogo';
-import Header from '../components/Header';
-import { excluirPet, obterUsuario } from '../storage/armazenamento';
-import { estilos } from '../styles/globalStyles';
+import QueryState from '../components/QueryState';
+import Screen from '../components/Screen';
+import { usePetDetails } from '../hooks/usePetForm';
+import { useCatalogos, usePet, usePetMutations } from '../hooks/usePets';
 import { cores } from '../styles/tema';
+import { ui } from '../styles/ui';
 
 export default function PerfilPet({ navigation, route }) {
-  const pet = route.params?.pet;
-  const [usuario, setUsuario] = useState(null);
+  const id = route.params?.id;
+  const petQuery = usePet(id);
+  const catalogosQuery = useCatalogos();
+  const { excluir } = usePetMutations();
+  const [deleteError, setDeleteError] = useState(null);
+  const details = usePetDetails(petQuery.data, catalogosQuery.data);
 
-  useFocusEffect(
-    useCallback(() => {
-      obterUsuario().then(setUsuario);
-    }, [])
-  );
-
-  const podeExcluir = usuario?.tipoConta !== 'veterinario' && Boolean(pet?.id);
-
-  function confirmarExcluir() {
+  function confirmDelete() {
+    if (!id || excluir.isPending) return;
+    setDeleteError(null);
     Alert.alert(
       'Apagar animal',
-      `Deseja apagar ${pet?.nome || 'este animal'}? Os agendamentos ligados a ele também serão removidos.`,
+      `Deseja apagar ${details?.name || 'este animal'}? Esta ação não pode ser desfeita.`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
           text: 'Apagar',
           style: 'destructive',
           onPress: async () => {
-            await excluirPet(pet?.id);
-            navigation.replace('ListaPets', { atualizadoEm: Date.now() });
+            try {
+              await excluir.mutateAsync(id);
+              navigation.replace('ListaPets');
+            } catch (error) {
+              setDeleteError(error?.message || 'Não foi possível apagar o animal. Tente novamente.');
+            }
           },
         },
-      ]
+      ],
+    );
+  }
+
+  if (!id) {
+    return (
+      <Screen navigation={navigation} title="Perfil do animal" subtitle="Dados do animal" active="home">
+        <Card>
+          <Text accessibilityRole="alert" style={ui.title}>Animal não identificado</Text>
+          <Text style={ui.body}>Abra o perfil novamente pela lista de animais.</Text>
+          <Button title="Voltar para a lista" onPress={() => navigation.replace('ListaPets')} />
+        </Card>
+      </Screen>
     );
   }
 
   return (
-    <SafeAreaView style={estilos.tela}>
-      <ScrollView contentContainerStyle={estilos.conteudo}>
-        <View style={estilos.topoLogo}>
-          <DobuLogo />
-        </View>
-        <Header navigation={navigation} title={pet?.nome || 'Perfil do Animal'} subtitle="Dados do animal" />
+    <Screen
+      navigation={navigation}
+      title={details?.name || 'Perfil do animal'}
+      subtitle="Dados e atalhos de cuidado"
+      active="home"
+    >
+      <QueryState query={petQuery}>
+        <QueryState query={catalogosQuery}>
+          {details ? (
+            <>
+              <Card style={styles.highlight}>
+                <View style={styles.avatar}>
+                  <Ionicons name="paw" size={58} color={cores.principalEscuro} />
+                </View>
+                <Text style={styles.name}>{details.name}</Text>
+                <Text style={styles.description}>
+                  {details.speciesName} • {details.breedName}
+                </Text>
+              </Card>
 
-        <Card style={styles.highlight}>
-          <View style={styles.avatar}>
-            {pet?.foto ? (
-              <Image source={{ uri: pet.foto }} style={styles.fotoPet} />
-            ) : (
-              <Ionicons name="paw" size={58} color={cores.principalEscuro} />
-            )}
-          </View>
-          <Text style={styles.nome}>{pet?.nome || 'Animal'}</Text>
-          <Text style={styles.descricao}>{pet?.especie || 'Espécie'} - {pet?.raca || 'Raça'}</Text>
-          <Text style={styles.nascimento}>Nascimento: {pet?.nascimento || 'Não informado'}</Text>
-        </Card>
+              <Card style={styles.summary}>
+                <Text style={ui.title}>Perfil</Text>
+                <DataRow icon="calendar-outline" label="Idade" value={details.ageLabel} />
+                <DataRow icon="paw-outline" label="Espécie" value={details.speciesName} />
+                <DataRow icon="ribbon-outline" label="Raça" value={details.breedName} />
+                <DataRow icon="person-outline" label="Responsável" value={details.ownerName} />
+              </Card>
 
-        <Card style={styles.visao}>
-          <Text style={styles.secao}>Dados médicos</Text>
-          <View style={styles.linha}>
-            <Ionicons name="scale-outline" size={21} color={cores.principalEscuro} />
-            <Text style={styles.linhaTexto}>Peso: {pet?.peso || 'Não informado'}</Text>
-          </View>
-          <View style={styles.linha}>
-            <Ionicons name="warning-outline" size={21} color={cores.principalEscuro} />
-            <Text style={styles.linhaTexto}>Alergias: {pet?.alergias || 'Nenhuma informada'}</Text>
-          </View>
-          <View style={styles.linha}>
-            <Ionicons name="medkit-outline" size={21} color={cores.principalEscuro} />
-            <Text style={styles.linhaTexto}>Medicamentos: {pet?.medicamentos || 'Nenhum informado'}</Text>
-          </View>
-          <View style={styles.linha}>
-            <Ionicons name="document-text-outline" size={21} color={cores.principalEscuro} />
-            <Text style={styles.linhaTexto}>Observacoes: {pet?.observacoes || 'Sem observacoes'}</Text>
-          </View>
-        </Card>
+              <View style={styles.actions}>
+                <Button
+                  title="Editar animal"
+                  icon="create-outline"
+                  onPress={() => navigation.navigate('CadastroPet', { id })}
+                  disabled={excluir.isPending}
+                />
+                <Button
+                  title="Ver agendamentos"
+                  icon="calendar-outline"
+                  cor="branco"
+                  onPress={() => navigation.navigate('Agendamentos', { petId: id })}
+                  disabled={excluir.isPending}
+                />
+                <Button
+                  title="Informações e cuidados"
+                  icon="document-text-outline"
+                  cor="branco"
+                  onPress={() => navigation.navigate('Informacoes', { petId: id })}
+                  disabled={excluir.isPending}
+                />
+                {deleteError ? <Text accessibilityRole="alert" style={ui.error}>{deleteError}</Text> : null}
+                <Button
+                  title={excluir.isPending ? 'Apagando…' : 'Apagar animal'}
+                  icon="trash-outline"
+                  cor="vermelho"
+                  onPress={confirmDelete}
+                  disabled={excluir.isPending}
+                />
+              </View>
+            </>
+          ) : null}
+        </QueryState>
+      </QueryState>
+    </Screen>
+  );
+}
 
-        {podeExcluir ? (
-          <Button
-            title="Apagar animal"
-            icon="trash-outline"
-            cor="vermelho"
-            onPress={confirmarExcluir}
-            style={styles.botaoExcluir}
-          />
-        ) : null}
-      </ScrollView>
-      <BottomNavigation
-        navigation={navigation}
-        active="home"
-        homeRoute={usuario?.tipoConta === 'veterinario' ? 'PerfilVeterinario' : 'Inicio'}
-      />
-    </SafeAreaView>
+function DataRow({ icon, label, value }) {
+  return (
+    <View style={styles.row}>
+      <Ionicons name={icon} size={21} color={cores.principalEscuro} />
+      <View style={styles.rowText}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.value}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  highlight: {
-    alignItems: 'center',
-  },
+  highlight: { alignItems: 'center' },
   avatar: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: cores.fundoClaro,
+    width: 138,
+    height: 138,
+    borderRadius: 69,
+    backgroundColor: cores.amareloClaro,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    overflow: 'hidden',
     borderWidth: 6,
     borderColor: cores.principal,
   },
-  fotoPet: {
-    width: '100%',
-    height: '100%',
-  },
-  nome: {
-    color: cores.marrom,
-    fontSize: 32,
-    fontWeight: '900',
-  },
-  descricao: {
-    color: cores.textoClaro,
-    fontSize: 19,
-    marginTop: 4,
-  },
-  nascimento: {
-    color: cores.texto,
-    fontWeight: '700',
-    marginTop: 10,
-  },
-  visao: {
-    marginTop: 16,
-  },
-  secao: {
-    color: cores.marrom,
-    fontSize: 18,
-    fontWeight: '900',
-    marginBottom: 10,
-  },
-  linha: {
+  name: { color: cores.marrom, fontSize: 30, fontWeight: '900', textAlign: 'center' },
+  description: { color: cores.textoClaro, fontSize: 18, marginTop: 5, textAlign: 'center' },
+  summary: { marginTop: 16 },
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    minHeight: 58,
     borderTopWidth: 1,
     borderTopColor: cores.cinza,
+    paddingVertical: 9,
   },
-  linhaTexto: {
-    flex: 1,
-    color: cores.texto,
-    fontSize: 17,
-    marginLeft: 10,
-    lineHeight: 21,
-  },
-  botaoExcluir: {
-    marginTop: 16,
-    marginBottom: 12,
-  },
+  rowText: { flex: 1, marginLeft: 11 },
+  label: { color: cores.textoClaro, fontSize: 13, fontWeight: '800' },
+  value: { color: cores.texto, fontSize: 17, marginTop: 2 },
+  actions: { gap: 12, marginTop: 16, marginBottom: 12 },
 });

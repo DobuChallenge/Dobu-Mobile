@@ -1,130 +1,120 @@
-import { useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback } from 'react';
+import { StyleSheet, Text } from 'react-native';
 import Button from '../components/Button';
-import Header from '../components/Header';
-import TextInput from '../components/TextInput';
 import Card from '../components/Card';
-import DobuLogo from '../components/DobuLogo';
-import BottomNavigation from '../components/BottomNavigation';
-import PhotoPicker from '../components/PhotoPicker';
-import { adicionarPontos, salvarPet } from '../storage/armazenamento';
-import { estilos } from '../styles/globalStyles';
+import QueryState from '../components/QueryState';
+import Screen from '../components/Screen';
+import SelectField from '../components/SelectField';
+import TextInput from '../components/TextInput';
+import { useAuth } from '../hooks/useAuth';
+import { usePetForm } from '../hooks/usePetForm';
+import { useCatalogos, usePet, usePetMutations } from '../hooks/usePets';
+import { cores } from '../styles/tema';
+import { ui } from '../styles/ui';
 
-function formatarDataNascimento(valor) {
-  const numeros = valor.replace(/\D/g, '').slice(0, 8);
-  const dia = numeros.slice(0, 2);
-  const mes = numeros.slice(2, 4);
-  const ano = numeros.slice(4, 8);
+export default function CadastroPet({ navigation, route }) {
+  const id = route.params?.id;
+  const editing = Boolean(id);
+  const { user } = useAuth();
+  const petQuery = usePet(id);
+  const catalogosQuery = useCatalogos();
+  const { salvar } = usePetMutations();
 
-  if (numeros.length > 4) return `${dia}/${mes}/${ano}`;
-  if (numeros.length === 4) return `${dia}/${mes}/`;
-  if (numeros.length > 2) return `${dia}/${mes}`;
-  if (numeros.length === 2) return `${dia}/`;
-  return dia;
-}
+  const handleSaved = useCallback((savedPet) => {
+    const savedId = savedPet?.id || id;
+    if (savedId) navigation.replace('PerfilPet', { id: savedId });
+    else navigation.replace('ListaPets');
+  }, [id, navigation]);
 
-function dataValida(valor) {
-  const [dia, mes, ano] = valor.split('/').map(Number);
-  if (!dia || !mes || !ano || ano < 1900) return false;
+  const form = usePetForm({
+    id,
+    pet: petQuery.data,
+    catalogos: catalogosQuery.data,
+    user,
+    savePet: salvar.mutateAsync,
+    onSaved: handleSaved,
+  });
 
-  const data = new Date(ano, mes - 1, dia);
-  const hoje = new Date();
+  const formContent = (
+    <QueryState
+      query={catalogosQuery}
+      empty={Boolean(catalogosQuery.data && (!catalogosQuery.data.especies?.length || !catalogosQuery.data.racas?.length))}
+      emptyTitle="Catálogo indisponível"
+      emptyMessage="O catálogo de espécies e raças precisa ser configurado pelo serviço Dobu."
+    >
+      <Card style={styles.formCard}>
+        <TextInput
+          label="Nome do animal"
+          value={form.draft.nome}
+          onChangeText={(value) => form.setField('nome', value)}
+          placeholder="Ex.: Lua"
+          editable={!form.isSubmitting}
+        />
+        <TextInput
+          label="Idade em anos"
+          value={form.draft.idade}
+          onChangeText={(value) => form.setField('idade', value)}
+          placeholder="Ex.: 0"
+          keyboardType="number-pad"
+          editable={!form.isSubmitting}
+        />
+        <SelectField
+          label="Espécie"
+          value={form.draft.especieId}
+          onChange={(value) => form.setField('especieId', value)}
+          options={form.speciesOptions}
+          placeholder="Selecione a espécie"
+          disabled={form.isSubmitting}
+        />
+        <SelectField
+          label="Raça"
+          value={form.draft.racaId}
+          onChange={(value) => form.setField('racaId', value)}
+          options={form.breedOptions}
+          placeholder={form.draft.especieId ? 'Selecione a raça' : 'Selecione a espécie primeiro'}
+          disabled={!form.draft.especieId || form.isSubmitting}
+        />
+        <SelectField
+          label="Responsável"
+          value={form.draft.responsavelId}
+          onChange={(value) => form.setField('responsavelId', value)}
+          options={form.ownerOptions}
+          placeholder="Selecione o responsável"
+          disabled={user?.tipoConta !== 'veterinario' || form.isSubmitting}
+        />
+
+        {user?.tipoConta === 'veterinario' && form.ownerOptions.length === 0 ? (
+          <Text accessibilityRole="alert" style={ui.error}>Nenhuma conta responsável está disponível.</Text>
+        ) : null}
+        {form.error ? <Text accessibilityRole="alert" style={ui.error}>{form.error}</Text> : null}
+
+        <Button
+          title={form.isSubmitting ? 'Salvando…' : editing ? 'Salvar alterações' : 'Cadastrar animal'}
+          icon={editing ? 'checkmark-circle-outline' : 'add-circle-outline'}
+          cor="cinzaEscuro"
+          onPress={form.submit}
+          disabled={form.isSubmitting}
+        />
+      </Card>
+    </QueryState>
+  );
 
   return (
-    data.getFullYear() === ano &&
-    data.getMonth() === mes - 1 &&
-    data.getDate() === dia &&
-    data <= hoje
+    <Screen
+      navigation={navigation}
+      title={editing ? 'Editar animal' : 'Cadastrar animal'}
+      subtitle={editing ? 'Atualize os dados do perfil' : 'Organize os dados do seu animal'}
+      active="home"
+    >
+      {editing ? <QueryState query={petQuery}>{formContent}</QueryState> : formContent}
+    </Screen>
   );
 }
 
-export default function CadastroPet({ navigation }) {
-  const [nome, setNome] = useState('');
-  const [especie, setEspecie] = useState('');
-  const [raca, setRaca] = useState('');
-  const [nascimento, setNascimento] = useState('');
-  const [foto, setFoto] = useState('');
-  const [peso, setPeso] = useState('');
-  const [alergias, setAlergias] = useState('');
-  const [medicamentos, setMedicamentos] = useState('');
-  const [observacoes, setObservacoes] = useState('');
-
-  function alterarNascimento(valor) {
-    setNascimento(formatarDataNascimento(valor));
-  }
-
-  async function salvar() {
-    if (!nome.trim() || !especie.trim() || !raca.trim() || !nascimento.trim()) {
-      Alert.alert('Cadastro incompleto', 'Preencha nome, espécie, raça e data de nascimento.');
-      return;
-    }
-
-    if (!dataValida(nascimento)) {
-      Alert.alert('Data inválida', 'Informe a data de nascimento no formato DD/MM/AAAA.');
-      return;
-    }
-
-    try {
-      await salvarPet({
-        nome: nome.trim(),
-        especie: especie.trim(),
-        raca: raca.trim(),
-        nascimento: nascimento.trim(),
-        foto,
-        peso: peso.trim(),
-        alergias: alergias.trim(),
-        medicamentos: medicamentos.trim(),
-        observacoes: observacoes.trim(),
-      });
-      await adicionarPontos(10);
-      Alert.alert('Animal cadastrado', 'Você ganhou 10 pontos pelo cuidado preventivo.');
-      navigation.replace('ListaPets', { atualizadoEm: Date.now() });
-    } catch (error) {
-      console.log('ERRO AO CADASTRAR PET:', error);
-      Alert.alert('Erro', 'Não foi possível salvar o animal. Tente novamente.');
-    }
-  }
-
-  return (
-    <SafeAreaView style={estilos.tela}>
-      <ScrollView contentContainerStyle={estilos.conteudo} keyboardShouldPersistTaps="handled">
-        <View style={estilos.topoLogo}>
-          <DobuLogo />
-        </View>
-        <Header navigation={navigation} title="Cadastrar Animal" subtitle="Complete o perfil do animal" />
-
-        <Card style={{ backgroundColor: '#FFB84D', borderRadius: 18, paddingVertical: 22 }}>
-          <PhotoPicker photo={foto} onChangePhoto={setFoto} title="Foto do animal" type="pet" />
-          <TextInput label="Nome do animal" value={nome} onChangeText={setNome} placeholder="Digite o nome do animal..." />
-          <TextInput label="Espécie" value={especie} onChangeText={setEspecie} placeholder="Ex: cachorro, gato..." />
-          <TextInput label="Raça" value={raca} onChangeText={setRaca} placeholder="Digite a raça..." />
-          <TextInput
-            label="Data de nascimento"
-            value={nascimento}
-            onChangeText={alterarNascimento}
-            placeholder="DD/MM/AAAA"
-            keyboardType="numeric"
-          />
-          <TextInput label="Peso" value={peso} onChangeText={setPeso} placeholder="Digite o peso..." />
-          <TextInput label="Alergias" value={alergias} onChangeText={setAlergias} placeholder="Digite a alergia" />
-          <TextInput
-            label="Medicamentos em uso"
-            value={medicamentos}
-            onChangeText={setMedicamentos}
-            placeholder="Digite o medicamento..."
-          />
-          <TextInput
-            label="Observações médicas"
-            value={observacoes}
-            onChangeText={setObservacoes}
-            placeholder="Digite a observação..."
-            multiline
-          />
-          <Button title="Adicionar animal" cor="cinzaEscuro" onPress={salvar} style={{ marginHorizontal: 28 }} />
-        </Card>
-      </ScrollView>
-      <BottomNavigation navigation={navigation} active="home" />
-    </SafeAreaView>
-  );
-}
+const styles = StyleSheet.create({
+  formCard: {
+    backgroundColor: cores.principal,
+    borderRadius: 18,
+    paddingVertical: 22,
+  },
+});
