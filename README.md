@@ -434,7 +434,7 @@ As fotos utilizadas nos cadastros de usuário e pet são recursos visuais locais
 
 # Links
 
-* **Vídeo da Sprint 3:** 
+* **Vídeo da Sprint 3:** https://youtu.be/YcE1WVLbJDI
 * **Protótipo no Figma:** https://www.figma.com/design/mOXmQd2t8nKM3tjBE9g5Dn/Challenge
 * **Repositório:** https://github.com/DobuChallenge/Dobu-Mobile
 
